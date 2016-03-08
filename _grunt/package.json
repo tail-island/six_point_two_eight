@@ -1,9 +1,0 @@
-{
-  "name": "six_point_two_eight",
-  "version": "0.0.1",
-  "main": "Gruntfile.js",
-  "devDependencies": {
-    "grunt": "*",
-    "grunt-bower-task": "*"
-  }
-}
