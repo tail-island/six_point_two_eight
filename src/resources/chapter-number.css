@@ -1,0 +1,26 @@
+body {
+  counter-reset: chapter;
+}
+
+h1 {
+  counter-reset: section;
+}
+
+h1:before {
+  counter-increment: chapter;
+  content: counter(chapter) ". ";
+}
+
+h2 {
+  counter-reset: subsection;
+}
+
+h2:before {
+  counter-increment: section;
+  content: counter(chapter) "." counter(section) ". ";
+}
+
+h3:before {
+  counter-increment: subsection;
+  content: counter(chapter) "." counter(section) "." counter(subsection) ". ";
+}

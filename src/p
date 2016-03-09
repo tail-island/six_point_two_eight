@@ -1,0 +1,1 @@
+pandoc -f markdown_github+footnotes -s --self-contained -t html5 -c ./resources/github-markdown.css -c ./resources/chapter-number.css -B ./resources/github-markdown-b.html -A ./resources/github-markdown-a.html -M pagetitle="ROSプログラミング・ガイド" *.md > ../index.html
