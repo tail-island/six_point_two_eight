@@ -214,7 +214,7 @@ find_package(catkin REQUIRED COMPONENTS
 #include <sensor_msgs/PointCloud2.h>  // 追加。
 
 namespace six_point_two_eight {
-  inline auto createTwistMsg(float linear_x, float angular_z) {
+  inline auto createTwistMsg(double linear_x, double angular_z) {
     geometry_msgs::Twist msg;
     msg.linear.x = linear_x;
     msg.angular.z = angular_z;
@@ -459,7 +459,7 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::savePointCloud2File(sensor_msgs
 #include "six_point_two_eight/point_cloud_utilities.h"  // 追加。
 
 namespace six_point_two_eight {
-  inline auto createTwistMsg(float linear_x, float angular_z) {
+  inline auto createTwistMsg(double linear_x, double angular_z) {
     geometry_msgs::Twist msg;
     msg.linear.x = linear_x;
     msg.angular.z = angular_z;
@@ -659,13 +659,11 @@ package.xmlとCMakeLists.txtに、`tf`パッケージと`tf_conversions`パッ�
 
 ごめんなさい。関数宣言の段階でTFの知識が必要だった……。まずは、TFのフレームの話をさせてください。というのも、座標変換前の点群を調べてみると、深度センサーの位置を原点にして、前がZ軸で右がX軸、下がY軸になっているんですよ。
 
-![]()
+![深度センサーの座標系](images/camera_coordinates.png)
 
 これはROSの座標系とは反転が必要なレベル（いわゆる右手系と左手系のレベル）で異なっているわけで、オドメトリーがどうのこうのの前に、まずはROSの座標系に変換しなければなりません。幸いなことにこの変換は、[四元数](https://ja.wikipedia.org/xxx)と呼ばれる複素数を拡張した数体系を使えば、簡単に変換できるみたいです（x = -0.5、y = 0.5、z = -0.5、w = 0.5の四元数で変換できた）。で、次に問題になるのはTurtleBotの原点と深度センサーの原点が異なっていること。これは、ベクトルの引き算で変換できます。でも、こんな変換をいちいちプログラムしていくのは大変すぎます。なので、ロボットの構成要素と構成要素を、必要な座標系の変換でつなぐことにしましょう。`camera_rgb_optical_frame`→（変換）→`camera_rgb_frame`→（変換）→`base_link`みたいな感じ。この方式ならプログラミングではなくてデータ作成で済むので、とても楽になります。
 
 ただ、`base_link`には深度センサー以外の構成要素もつながっていて、例えば`wheel_right_link`（右の車輪）なんてのもあります。そう考えると、構成要素の関係はリストではなくて木構造が適切かなぁと。で、さらに考えてみると、オドメトリーとロボット本体の関係も、この木構造で表現できます。変換が毎回同じか、移動によって変わっていくかの違いだけですもんね。というわけで、TFではこの構成要素をフレームと呼んで木構造にして、座標変換でつないでいきます。TureltBotのドライバーを動かした状態だと、`odom`フレーム（名前は一緒ですけど、`odom`トピックとは別物）が根で、`camera_rgb_optical_frame`フレームや`wheel_right_link`フレームを葉に持つ木構造が作られています。
-
-![]()
 
 TFで座標変換する際には、このフレームを使用します。どのフレームの座標系からどのフレームの座標系に変換するかを指定するわけ。指定するフレームは木のどこにあっても大丈夫です。木構造を辿ればよいわけですから。今回の場合、点群は`camera_rgb_optical_frame`の座標系であることが分かっている（というか、ROSでは`header.frame_id`にメッセージのフレームが設定されている）ので、変換先のフレームだけ指定すればよいことになります。なので、二番目の引数として`target_frame`を渡しています。
 
@@ -710,7 +708,7 @@ namespace six_point_two_eight {
 typedef pcl::PointXYZRGB Point;
 typedef pcl::PointCloud<Point> PointCloud;
 
-tf::TransformListener transform_listener_;  // 追加。
+static tf::TransformListener transform_listener_;  // 追加。
 
 // 略
 
@@ -1133,11 +1131,11 @@ namespace six_point_two_eight {
 
 #### 試してみた
 
-試してみると、以下のキャプチャのような感じ。うまくフィルタリングできています。でも、点の密度が濃すぎてちょっと重たいかなぁって感じ。
+試してみると、以下のキャプチャのような感じ。うまくフィルタリングできています。でも、点の密度が濃すぎてちょっと重たいかなと感じます。
 
 ![make_world_models（その3）](images/make_world_models_3.png)
 
-PCLにはダウンサンプリングの機能がありますから、ダウンサンプリングして点の数を減らしてみましょう。
+PCLにはダウンサンプリングの機能がありますから、さくっとダウンサンプリングして点の数を減らしてみましょう。
 
 ### ダウンサンプリング
 
@@ -1200,7 +1198,7 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::downsamplePointCloud2(sensor_ms
 
 #### include/six\_point\_two\_eight/make\_world\_models.h
 
-ロボット制御側は、例によって簡単です。ダウンサンプリングした後に他の処理を実行したほうが点の数が少なくて効率がよいので、一番内側で呼び出しています。
+ロボットを制御する側は、例によって簡単です。ダウンサンプリングした後に他の処理を実行したほうが点の数が少なくて効率がよいですから、一番内側で呼び出しています。
 
 ```cpp
 // 略
@@ -1248,8 +1246,10 @@ namespace six_point_two_eight {
 
 #### 完成！
 
-ついにプログラム完成です。点の数が減りました。
+ついにプログラム完成です。点の数が減りました。ちなみに、左側が机のキャビネットで、右側が椅子です。
 
 ![make_world_models（その4）](images/make_world_models_4.png)
 
-はい、お疲れさまでした。実は作成した点群を拡大するとズレがあって本章の最初に載せたキャプチャのレベルに達していないのですけど、今は気がつかなかったことにして、対象物の周囲360°からの点群の作成に入りましょう。点群のズレ問題は最後の章で解消しますので、ご安心ください。
+はい、お疲れさまでした。実は作成した点群を拡大するとズレがあって本章の最初に載せたキャプチャのレベルに達していないのですけど、今は気がつかなかったことにして[^8]、対象物の周囲360°からの点群の作成に入りましょう。
+
+[^8]: 点群のズレ問題は最後の章で解消しますので、ご安心ください。

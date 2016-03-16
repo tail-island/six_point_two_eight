@@ -91,7 +91,7 @@ Publish/Subscribeでのメッセージの流れはパブリッシャーからサ
 
 ### メッセージやサービスを、簡単に定義/使用可能にする
 
-メッセージは\*.msg、サービスは\*.svcというファイルで定義します。文法は、struct宣言みたいな感じ（実際にプログラミングするところで詳細を述べます）。そして、\*.msgや\*.svcはビルド時にC++の構造体のコードに変換されます。普通のコードでメッセージやサービスを作れるわけで、専用のAPIを使わなければならないXML作成より簡単です。トピックにpublishされたメッセージを表示するツールもあって、XMLと同様に人間が目で内容を確認することもできます。
+メッセージは\*.msg、サービスは\*.svcというファイルで定義します。文法は、struct宣言みたいな感じで簡単。そして、\*.msgや\*.svcはビルド時にC++の構造体のコードに変換されます。普通のコードでメッセージやサービスを作れるわけで、専用のAPIを使わなければならないXML作成より簡単です。トピックにpublishされたメッセージを表示するツールもあって、XMLと同様に人間が目で内容を確認することもできます。
 
 ここまでをまとましょう。ROSプログラムは、ノードと呼ばれるプログラムの集合になります。ノードは、トピックにメッセージをpublishしたりトピックからメッセージをsubscribeしたりして、非同期通信で処理を進めます。あまり使いませんけど、サービスという1対1の同期通信もあります。メッセージやサービスは、struct宣言みたいな感じで定義して、我々が書くC++のコードからはstructに見えるようになります。ほら、「ロボットのソフトウェア開発と通信」で挙げたHTTPとXMLでロボットする場合の問題が、すべて解決されたでしょ？
 
@@ -564,7 +564,7 @@ process[make_world_models-3]: started with pid [17044]
 
 ## Publisher
 
-おいおい、「Hello, world!」と画面に出すだけって、ROS関係ないじゃん！　ごめんなさい、おっしゃる通りです。もう少し高度なこと、TurtleBotを前に進ませる処理を書いてみましょう。
+「Hello, world!」と画面に出すだけって、ROS関係ないじゃん！　ごめんなさい、おっしゃる通りです。もう少し高度なこと、TurtleBotを前に進ませる処理を書いてみましょう。
 
 ### トピックとメッセージ
 
@@ -771,7 +771,7 @@ find_package(catkin REQUIRED COMPONENTS
 #include <geometry_msgs/Twist.h>
 
 namespace six_point_two_eight {
-  inline auto createTwistMsg(float linear_x, float angular_z) {
+  inline auto createTwistMsg(double linear_x, double angular_z) {
     geometry_msgs::Twist msg;
     msg.linear.x = linear_x;
     msg.angular.z = angular_z;
@@ -852,7 +852,7 @@ ros::Timerは簡単に使用できますので、いきなりコードで。
 #include <geometry_msgs/Twist.h>
 
 namespace six_point_two_eight {
-  inline auto createTwistMsg(float linear_x, float angular_z) {
+  inline auto createTwistMsg(double linear_x, double angular_z) {
     geometry_msgs::Twist msg;
     msg.linear.x = linear_x;
     msg.angular.z = angular_z;
