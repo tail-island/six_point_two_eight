@@ -12,7 +12,7 @@
 
 ### 共有する関数はどうしよう？
 
-移動するためには`geometry_msgs/Twist`メッセージを作成しなければならなくて、作成のための`createTwistMsg()`関数は`make_world_models.h`に書きました。このままだと、同じ関数を2回プログラミングすることになってしまいます。なので、別ファイルに移しましょう。`include/six_point_two_eight/utilities.h`を作成し、`createTwistMsg()`関数を移しました。
+移動するためには`geometry_msgs/Twist`メッセージを作成しなければならず、その作成用の`createTwistMsg()`関数を前の章では`make_world_models.h`に書きました。このままでは、同じ関数を2回プログラミングすることになってしまいますから、共通の別ファイルに移しましょう。`include/six_point_two_eight/utilities.h`を作成し、`createTwistMsg()`関数を移します。
 
 #### include/six\_point\_two\_eight/utilities.h
 
@@ -64,9 +64,9 @@ namespace six_point_two_eight {
 
 ### 9時の方向に0.5m進んでみる
 
-移動プログラムでは、`/odom`トピックの値に合わせた、適切な`geometry_msgs/Twist`メッセージを作成していけばよいはず。目的地までの距離が遠かったり角度のズレが大きい場合は少し速く動いたり回転したりして、近くなったらゆっくりにする。目的地と`/odom`が一致したら、移動終了。ただし、一致と言ってもピッタリにはできないだろうから、少し誤差を認めよう。目的地は、三角関数で計算できるはずだな。
+移動プログラムでは、`/odom`トピックの値に合わせた、適切な`geometry_msgs/Twist`メッセージを作成していけばよいはず。目的地までの距離が遠かったり角度のズレが大きい場合は少し速く動いたり回転したりして、近くなったらゆっくりにする。目的地と`/odom`が一致したら移動終了。ただし、一致と言ってもピッタリにはできないだろうから、少し誤差を認めよう。目的地は、三角関数で計算できるはずだな。
 
-と、この程度を考えたところで、プログラムを組んでみました。先に結果を述べておくと、プログラムが複雑になってしまうので、別のやり方を考えないと駄目な感じです。
+と、この程度を考えたところで、プログラムを組んでみました。プログラムを組んだ結果を先に述べておくと、プログラムが複雑になってしまうので、別のやり方を考えないと駄目な感じです。
 
 #### include/six\_point\_two\_eight/utilities.h
 
@@ -149,7 +149,7 @@ namespace six_point_two_eight {
       auto difference = createPointMsg(
         goal_position.x - odometry->pose.pose.position.x, goal_position.y - odometry->pose.pose.position.y);
 
-      // 距離と角度を計算します。計算が単純なので、TFやEigenを使わずに自前でやります。
+      // 距離と角度を計算します。単純な計算なので、TFやEigenを使わずに自前でやります。
       auto distance = std::sqrt(std::pow(difference.x, 2) + std::pow(difference.y, 2));
       auto angle = 
         normalizeAngle(std::atan2(difference.y, difference.x) - tf::getYaw(odometry->pose.pose.orientation));
@@ -174,7 +174,7 @@ namespace six_point_two_eight {
             return;                                    // そのままリターンします。
           }
           
-          ROS_INFO_STREAM("Reached!");  // 移動しない＝到着なので、ログを出して、
+          ROS_INFO_STREAM("Reached!");  // 移動しない＝到着なので、ログ出力して、
           odom_subscriber_.shutdown();  // サブスクライバーをシャットダウンします。
         });
     }
@@ -198,7 +198,7 @@ namespace six_point_two_eight {
 }
 ```
 
-えっと、対象物の周囲360°からの点群を作るためには、今回作成した移動の後に対象物が正面に来るように回転し、回転が終わったら深度センサーから点群をとり、また移動に戻るという処理を繰り返さなければなりません。コード中の`ROS_INFO_STREAM("Reached!")`している部分で次の処理のメンバー関数を呼ばなければならないわけで、つまり関数の中から関数を呼び出して延々と処理がつながっていくわけで、それっていわゆるJavaScriptのコールバック地獄じゃん……。なんとかしないと……。
+このプログラムを拡張して、対象物の周囲360°からの点群を作らせるためには、移動の後に対象物が正面に来るように回転し、回転が終わったら深度センサーから点群をとり、また移動に戻るという処理を繰り返さなければなりません。コード中の`ROS_INFO_STREAM("Reached!")`している部分で次の処理のメンバー関数を呼ばなければならないわけで、つまり関数の中から関数を呼び出して延々と処理がつながることになって、それっていわゆるJavaScriptのコールバック地獄じゃん……。なんとかしなければなりません。
 
 #### src/six\_point\_two\_eight.cpp
 
@@ -260,17 +260,17 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 ## actionlib
 
-さて、先ほどのコールバック地獄まっしぐらなプログラムを、ここで何とかしましょう。サービスを使えば解決できそうな気がしますけど、サービスは柔軟性が低いのでできれば使いたくない。幸いなことに、ROSには`actionlib`という、中断することが可能な、長い時間をかけて実行するサーバー・プログラムを作成するためのパッケージがあって、この`actionlib`を使えばコールバック地獄をキレイに解決できるんです。
+さて、先ほどのコールバック地獄まっしぐらなプログラムを、ここで何とかしましょう。サービスを使えば解決できそうな気がしますけど、サービスは柔軟性が低いのでできれば使いたくない。幸いなことに、ROSには`actionlib`という、中断することが可能な、長い時間をかけて実行するサーバー・プログラムを作成するためのパッケージがあって、これを使うとコールバック地獄をキレイに解決できるんです。
 
 ### 地図作成と自律移動のパッケージを動かして、ROSの可能性を感じてみる
 
-申し訳ないのですけれど`actionlib`はとりあえず脇に置いて、一時的に本稿から離れて[Build a map with SLAM](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Build%20a%20map%20with%20SLAM)と[Autonomously navigate in a known map](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Aotonomously%20navigate%20in%20a%20known%20map)を開いて、指示に従ってみてください（もっと細かい情報が欲しいという場合は、[Learn TurtleBot and ROS](http://learn.turtlebot.com/)も参照してください）。
+申し訳ないのですけれど`actionlib`はとりあえず脇に置いて、一時的に本稿から離れて[Build a map with SLAM](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Build%20a%20map%20with%20SLAM)と[Autonomously navigate in a known map](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Aotonomously%20navigate%20in%20a%20known%20map)を開き、指示に従ってみてください（もっと細かい情報が必要なら、[Learn TurtleBot and ROS](http://learn.turtlebot.com/)も参照してください）。
 
 これらのページの指示に従ってコマンドを入力していくと、TurtleBotに地図を作成させ、作成した地図を活用して自律走行させることができます。しかも、必要な作業はパッケージの起動だけ。プログラミングは無しです。
 
-本稿はここまでROSを通信ライブラリとして扱ってきましたけど、実は、ROSの凄さは2,000を超えるROS対応パッケージ群にあるんです。しかも、それらのパッケージはメッセージとトピックという抽象的なレベルでつながるので、様々な異なるロボットで使用可能です。先ほどのページでも、最終的には汎用パッケージを使用しています。ページ中の呼び出しに使用している`turtlebot_navigation`パッケージは、汎用の`gmapping`パッケージ[^10]と`navigation`パッケージを呼び出すための`launch`ファイル[^11]が詰まったパッケージなんです。
+本稿ではROSを通信ライブラリとして扱っていますけど、実は、ROSの凄さは2,000を超えるROS対応パッケージ群にあります。しかも、それらのパッケージはメッセージとトピックという抽象的なレベルでつながりますから、様々な異なるロボットで使用可能です。TurtleBot専用に見える先ほどのページでも、実は汎用のパッケージを使用しています。ページ中の呼び出しに使用している`turtlebot_navigation`パッケージは、汎用の`gmapping`パッケージ[^10]と`navigation`パッケージを呼び出すための`launch`ファイルが詰まったパッケージ[^11]なんです。
 
-時間があるときに、[ROS.orgのBrowse Software](http://www.ros.org/browse/list.php?package_type=package&distro=indigo)を見てみてください。私のお気に入りは[hector_slam](http://wiki.ros.org/hector_slam)と[navigation](http://wiki.ros.org/navigation)。これらのパッケージの紹介ビデオを見れば、自律移動するロボットを簡単に作れることが分かって、ROSがいかに便利なものなのかを感じ取れるはずです。あと、[MoveIt!](http://moveit.ros.org/)もスゴイです。ロボット・アームがグリグリして、なんでもできちゃいそう。
+時間があるときに、[ROS.orgのBrowse Software](http://www.ros.org/browse/list.php?package_type=package&distro=indigo)を見てみてください。私のお気に入りは[hector_slam](http://wiki.ros.org/hector_slam)と[navigation](http://wiki.ros.org/navigation)。これらのパッケージの紹介ビデオを見れば、自律移動するロボットを簡単に作れることが分かって、ROSがいかに便利かを感じ取れるはずです。あと、[MoveIt!](http://moveit.ros.org/)もスゴイ。ロボット・アームがグリグリして、なんでもできちゃいそうです。
 
 * hector_slam
 
@@ -285,7 +285,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 ### actionlib::SimpleActionClient
 
-先ほどのTurtleBotの自律移動のチュートリアルでは移動先をRVizのGUIで指定していましたけれど、一味違う我々は、プログラムから指定してみましょう。`turtlebot_navigation`パッケージが使用している`navigation`パッケージのドキュメントの[Sending Goals to the Navigation Stack](http://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals)に、移動先をプログラムから指定する方法が書いてありました。このドキュメントの途中には`actionlib`を使うと書いてありますから、`navigation`に指示を出すプログラムを組めば`actionlib`を試せるというわけ。
+先ほどのTurtleBotの自律移動のチュートリアルでは移動先をRVizのGUIで指定していましたけれど、一味違う我々は、プログラムから指定してみましょう。`turtlebot_navigation`パッケージが使用している`navigation`パッケージのドキュメントの[Sending Goals to the Navigation Stack](http://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals)に、移動先をプログラムから指定する方法が書いてありました。このドキュメントの途中には`actionlib`を使うと書いてありますから、`navigation`に指示を出すプログラムを組むことは`actionlib`の調査につながります。
 
 とってもお得な話ですから、さっそく試してみましょう。
 
@@ -310,7 +310,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 #### include/six\_point\_two\_eight/utilities.h
 
-`actionlib`は、通常のROSのメッセージ通信を活用して、長時間処理を実現しています。だからプログラムから使用するのはメッセージです。どんなメッセージがあるのかを確認するために、ターミナルで`rosmsg show move_base_msgs/MoveBase`まで入力して[Tab]キーを押してみてください。`MoveBase`を実現するのに必要なメッセージが一覧表示されます。
+`actionlib`は、通常のROSのメッセージ通信を活用して、長時間処理を実現します。だから、プログラムから使用するのは普通のメッセージ。どのようなメッセージを使うのかを確認したければ、ターミナルで`rosmsg show move_base_msgs/MoveBase`まで入力して[Tab]キーを押してみてください。`MoveBase`を実現するのに必要なメッセージが一覧表示されます。
 
 ```bash
 $ rosmsg show move_base_msgs/MoveBase
@@ -441,17 +441,17 @@ namespace six_point_two_eight {
 }
 ```
 
-`onInit()`に注目してください。移動が完了した後の処理（`ROS_INFO_STREAM()`）が、`moveTo()`メンバー関数の呼び出しの後に書かれています。コールバック地獄が発生しない、実に見通しがよいコードになりました。`actionlib`便利すぎです。
+上のコードの`onInit()`に注目してください。移動が完了した後の処理（`ROS_INFO_STREAM()`）が、`moveTo()`メンバー関数の呼び出しの後に書かれています。これで、コールバック地獄が発生しない、見通しがよいコードになりました。`actionlib`便利すぎです。
 
 あと、移動先をどのフレームの座標系で示すかを指示できるので、三角関数が不要になりました。やっぱり便利すぎ。
 
 ### actionlib::SimpleActionClient呼び出しを、ライブラリ化する
 
-でも、先ほどのコードの`actionlib`のサーバーを呼び出す部分、書くのが面倒くさい……。ライブラリ化してしまいましょう。
+でも、先ほどのコードの`actionlib`のサーバーを呼び出す部分は、書くのが面倒くさい……。ライブラリ化してしまいましょう。
 
 #### include/six\_point\_two\_eight/utilities.h
 
-本稿の要件なら、`actionlib`のフィードバックは不要です。同期処理にできるわけで、だからファンクターで実装できるでしょう。やってみます。
+本稿の要件の場合、`actionlib`のフィードバックは不要です。同期処理にできるわけで、だからファンクターで実装できるでしょう。やってみます。
 
 ```cpp
 #pragma once
@@ -482,7 +482,7 @@ namespace six_point_two_eight {
   };
   
   // 略。
-  <!-- 追加 -->
+
   // actionlib呼び出し用ファンクター。
   template <typename Action>
   struct CallAction {
@@ -529,12 +529,12 @@ namespace six_point_two_eight {
     }
   };
 
-  // メンバー変数宣言とbindTopic()で2回クラス名を書くのは大変なので、usingしておきます。
+  // 使用時にメンバー変数宣言とbindTopic()で2回クラス名を書くのは大変なので、usingしておきます。
   using CallMoveBaseAction = CallAction<move_base_msgs::MoveBaseAction>;
 }
 ```
 
-`TopicBinded`と`bindTopic()`のあたりが複雑になっているのは、`Nodelet`の初期化は`onInit()`で実施されるためです。メンバー変数の初期化をコンストラクターの初期化リストに書けない（初期化リストに書くと、初期化のコードが分散するので保守性が落ちてしまう）ので、トピックは`operator()`の引数になります。でも呼び出しのたびにトピックを引数に書くのは面倒だし保守性が下がってしまうので、`onInit()`の中でトピックを`std::bind`しておきたい。この`std::bind`した結果を格納するメンバー変数の型が`TopicBinded`で、`std::bind`呼び出しを少しだけ楽にするのが`bindTopic()`メンバー関数です。具体的な使い方は、次の`make_target_models.h`でやります。
+`TopicBinded`と`bindTopic()`のあたりが複雑になっているのは、`Nodelet`の初期化が`onInit()`で実施されるためです。メンバー変数の初期化をコンストラクターの初期化リストに書けない（初期化リストに書くと、初期化のコードが分散するので保守性が落ちてしまう）ので、トピックは`operator()`の引数になります。でも呼び出しのたびにトピックを引数に書くのは面倒だし保守性が下がってしまうので、`onInit()`の中でトピックを`std::bind`しておきたい。この`std::bind`した結果を格納するメンバー変数の型が`TopicBinded`で、`std::bind`呼び出しを少しだけ楽にするのが`bindTopic()`メンバー関数です。具体的な使い方は、次の`make_target_models.h`でやります。
 
 #### include/six\_point\_two\_eight/make\_target\_models.h
 
@@ -547,7 +547,7 @@ namespace six_point_two_eight {
 #include <ros/ros.h>
 #include <thread>
 
-// <actionlibclient/simple_action-client.h>と<move_base_msgs/MoveBaseGoal.h>の#includeは削除。
+// <actionlibclient/simple_action_client.h>と<move_base_msgs/MoveBaseGoal.h>の#includeは削除。
 
 #include "six_point_two_eight/utilities.h"
 
@@ -576,7 +576,7 @@ namespace six_point_two_eight {
 }
 ```
 
-とても簡単。`actionlib`は本当に便利ですな。
+びっくりしちゃうくらい簡単になりました。`actionlib`は本当に便利ですな。
 
 ### actionlib::SimpleActionServer
 
@@ -586,7 +586,7 @@ namespace six_point_two_eight {
 
 `actionlib`のサーバーは、`actionlib::SimpleActionServer`クラスを使用して作成します。実際の処理をする関数を引数に渡して、処理が終了したら`setSucceeded()`メンバー関数を呼ぶだけ。使い方そのものは簡単です。
 
-ただし、この`SimpleActionServer`クラス、初期化はコンストラクタでやることになっていて、しかも`operator=`が無効になっているんですよ。このプログラミング・スタイルそのものは、良いプログラミング・スタイルです。不完全なインスタンスは危険ですから、初期化をコンストラクタで完全にやっておくのは良いことでしょう。そのクラスをメンバー変数に持ちたい時は、コンストラクタの初期化リストで初期化できる。初期化リストでメンバー変数を初期化するのは、良いスタイルだとされていますしね。変数への再代入を禁止しておけば状態遷移がなくなって、関数型言語のコードみたいに単純になるでしょう。と、良いこと尽くめなプログラミング・スタイルなのですけれど、残念なことに`Nodelet`と相性が悪いんですよ……。
+ただし、この`SimpleActionServer`クラス、初期化はコンストラクタでやることになっていて、しかも`operator=`が無効になっているんですよ。このプログラミング・スタイルそのものは、良いプログラミング・スタイルではあります。不完全なインスタンスは危険ですから、初期化をコンストラクタで完全にやっておくのは良いことでしょう。そのクラスをメンバー変数に持つ場合は、コンストラクタの初期化リストで初期化できます。初期化リストでメンバー変数を初期化するのは、良いスタイルだとされていますしね。変数への再代入を禁止しておけば状態遷移がなくなって、関数型言語のコードみたいに単純になるでしょう。と、良いこと尽くめなプログラミング・スタイルなのですけれど、残念なことに`Nodelet`と相性が悪いんですよ……。
 
 `Nodelet`の場合、`SimpleActionServer`をコンストラクタの初期化リストで初期化するのは駄目です。`Nodelet`の`onInit()`がまだ呼ばれていませんからね。`operator=`が無効になっているので、`onInit()`の中での初期化も不可能です。
 
@@ -613,7 +613,7 @@ public:
 };
 ```
 
-困った時のGoogle先生ということで、インターネットを検索したら別クラス作る方式のコードがありました。以下のような感じ。
+困った時のGoogle先生で検索したら、別クラス作る方式のコードが見つかりました。以下のような感じ。
 
 ```cpp
 class MoveBaseServerImpl {
@@ -641,7 +641,7 @@ public:
 
 ただ、このコードだと、ちょっと不格好ですね……。処理が分散していて、保守性が低そうです。
 
-でも、このコードはよいヒントになります。このコードで使われているboostのIn-Place Factoryなら、初期化を遅らせることが可能なわけ（このコードを見るまで、私はIn-Place Factoryを知りませんでした）。だったら、わざわざ間にクラスを挟まなくてもよいはず。というわけで、以下のように、In-Place Factoryを使ってコードを書きましょう。
+でも、このコードはよいヒントになります。このコードで使われているBoostのIn-Place Factoryなら、初期化を遅らせることが可能です（このコードを見るまで、私はIn-Place Factoryの存在を知りませんでした）。だったら、わざわざ間にクラスを挟まなくてもよいはず。というわけで、以下のように、In-Place Factoryを使ってコードを書きました。
 
 移動処理のほとんどは、以前作成した`actionlib`を使わないバージョンからのコピー＆ペーストです。回転する処理と、`/odom`以外のフレームが指定された時に備えるために`TF`で座標変換する処理を付け加えた程度です。
 
@@ -770,7 +770,7 @@ namespace six_point_two_eight {
 
 #### src/six\_point\_two\_eight.cpp
 
-`move_base_server.h`がコンパイルされるように、\*.cppを修正します。
+`move_base_server.h`がコンパイルされるよう、\*.cppを修正します。
 
 ```cpp
 #include <pluginlib/class_list_macros.h>
@@ -806,7 +806,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 #### include/six\_point\_two\_eight/make\_target\_models.h
 
-ついでですから、対象物の周囲360°を回るように、`make_target_models.h`を修正してしまいましょう。対象物は正面にあるものとし、その対象物の周囲の撮影ポイントを回ります。`/odom`を使用して、絶対位置で計算するようにしました。
+ついでですから、対象物の周囲360°を回るように、`make_target_models.h`を修正してしまいましょう。対象物は正面にあるものとし、その対象物の周囲の撮影ポイントを回ります。処理を単純にするために、`/odom`を使用して絶対位置で計算しました。
 
 ```cpp
 #pragma once
@@ -896,11 +896,11 @@ namespace six_point_two_eight {
 </launch>
 ```
 
-で、実際に動かしてみると、移動が遅くて完了までかなり長い時間がかかります……。これは、オドメトリーの誤差をできるだけ減らすためです。`navigation`パッケージで速く動けているのは、あれは深度センサーの情報を元に現在位置を補正し続けているからなんですよ。今回はそんな高度な処理は作成していませんから、申し訳ないですけど、遅いのを我慢してください。
+で、実際に動かしてみると、移動が遅くて完了までかなり長い時間がかかります……。これは、オドメトリーの誤差をできるだけ減らすためです。`navigation`パッケージで速く動けているのは、あれは深度センサーの情報を元に現在位置を補正し続けているからなんですよ。今回はそんな高度な処理は作成していませんので、申し訳ないですけど、遅いのは我慢してください。
 
 ### \*.actionの定義
 
-点群を取得する処理も、`actionlib`化してしまいましょう。ターミナルで`rosmsg list | grep ActionGoal`してみても使えそうな既存のアクションはなさそうなので、新しいアクションの定義方法を学ぶこともできますしね。
+点群を取得する処理も、`actionlib`化してしまいましょう。既存のアクションを再利用できない処理なので、新しいアクションの定義方法を学ぶこともできますしね。
 
 #### action/GetPointCloud2.action
 
@@ -914,7 +914,7 @@ Resultのメッセージ定義
 Feedbackのメッセージ定義
 ```
 
-で、メッセージ定義は、`型 変数名`の0行以上の繰り返し。何もなくてよい（move_base_msgs/MoveBaseResultのような）場合は、0行になります。今回は、どのトピックからデータを取得するのかを渡して、PointCloud2を返す感じ。途中経過がないので、フィードバックは無しで。なので、`GetPointCloud2.action`の中身は以下になります。
+で、メッセージ定義は、`型 変数名`の0行以上の繰り返し。何もいらない（move\_base\_msgs/MoveBaseResultのような）場合は、0行になります。今回は、どのトピックからデータを取得するのかを渡して、PointCloud2を返す感じ。途中経過は使わないので、フィードバックは無しで。具体的な`GetPointCloud2.action`の中身は、以下になります。
 
 ```
 string target_topic
@@ -927,7 +927,7 @@ sensor_msgs/PointCloud2 points
 
 メッセージ定義の場合は、`package.xml`の`<build_depend>`に`message_generation`、`<run_depend>`に`message_runtime`を指定するという面倒なルールがあるのですけれど、アクション定義の場合はどちらも`actionlib_msgs`パッケージで大丈夫です。`actionlib_msgs`をpackage.xmlの`<build_depends>`と`<run_depends>`に追加してください。
 
-CMakeLists.xmlはもう少し複雑です。というのも、`*.action`をコンパイル（といってもC++やPython、Common Lispのコード生成）するように指示しなければならないんです。あと、`*.ation`のコンパイルが終了してC++のコードが生成されるまで、`*.cpp`のビルドを待つようにも指示します。
+CMakeLists.xmlはもう少し複雑です。というのも、`*.action`をコンパイルするように指示しなければならないんです。あと、`*.ation`のコンパイルが終了してC++のコードが生成されるまで、`*.cpp`のビルドを待つようにも指示します。
 
 ```bash
 cmake_minimum_required(VERSION 2.8.3)
@@ -1016,7 +1016,7 @@ GetPointCloud2ActionGoal.h      GetPointCloud2ActionResult.h  GetPointCloud2Goal
 
 いつもの`utilities.h`に、メッセージ生成関数と`CallAction`の別名定義を追加しておきます。
 
-`six_point_two_eight`パッケージの中で定義したメッセージのの名前空間は、`six_point_two_eight`になります。あと、`include`ファイルは`six_point_two_eight/メッセージ名.h`。一般には、我々がmove_base_msgs/MoveBaseActionを再利用したようにメッセージだけで再利用される可能性がありますから、`*_msgs`という名前のパッケージを作ってそこにメッセージを定義すべきです。でもまぁ、今回のメッセージは`six_point_two_eight`パッケージ内でしか利用しないでしょうから、ごめんなさい、パッケージ分割はなしで。
+`six_point_two_eight`パッケージの中で定義したメッセージのの名前空間は、`six_point_two_eight`になります。あと、`include`ファイルは`six_point_two_eight/メッセージ名.h`。一般には、我々がmove_base_msgs/MoveBaseActionを再利用したようにメッセージだけが再利用される可能性がありますから、`*_msgs`という名前のパッケージを作ってそこにメッセージを定義すべきです。でもまぁ、今回のメッセージは我々しか利用しないでしょうから、ごめんなさい、パッケージ分割はなしで。
 
 ```cpp
 #pragma once
@@ -1128,7 +1128,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 #### six\_point\_two\_eight.xml
 
-単純作業が続いて申し訳ありませんけど、`Nodelet`に名前を付ける単純作業を実施してください。
+単純作業が続いて申し訳ありませんが、`Nodelet`に名前を付ける単純作業を実施してください。
 
 ```cpp
 <library path="lib/libsix_point_two_eight">
@@ -1147,7 +1147,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 #### include/six\_point\_two\_eight/make\_target\_models.h
 
-作成した`actionlib`を呼び出す`make_world_models.h`も、修正しましょう。
+作成した`actionlib`を呼び出すように、`make_world_models.h`も修正しましょう。
 
 ```cpp
 #pragma once
@@ -1229,7 +1229,7 @@ namespace six_point_two_eight {
 }
 ```
 
-`point_cloud_utilities.h`の関数は`sensor_msgs::PointCloud2ConstPtr`を引数にとる形で定義していて、`six_point_two_eight::GetPointCloud2Result`から受け取れるデータは`sensor_msgs::PointCloud2`（`ConstPtr`がつかない）なので、型変換しています。対象領域が小さいので、今回はダウンサンプリングはしませんでした。あと、`point_cloud_utilities.h`の関数を呼び出した時に例外が発生してもデータを取り直せるように、`while`ループで囲んでいます。
+途中が少しごちゃごちゃしているのは、`point_cloud_utilities.h`の関数は`sensor_msgs::PointCloud2ConstPtr`を引数にとる形で定義しているのに`six_point_two_eight::GetPointCloud2Result`から受け取れるデータは`sensor_msgs::PointCloud2`（`ConstPtr`がつかない）なためです。だから、型変換しなければなりませんでした。あと、点群に含まれる点の数が少ないため、今回はダウンサンプリングはしませんでした。`point_cloud_utilities.h`の関数を呼び出した時に例外が発生した場合に点群を再採取できるように、`while`ループで囲んでいます。
 
 ### launch/make_target_models.launch
 
@@ -1267,7 +1267,7 @@ namespace six_point_two_eight {
 
 #### launch/make_target_models_in_gazebo.launch
 
-今回の処理は点群を扱いますから、シミュレーター用の`launch`ファイルも修正しておいてください。
+今回の処理は点群を扱いますから、トピックが実機と異なっているシミュレーター用の`launch`ファイルも、修正します。
 
 ```xml
 <launch>
@@ -1279,19 +1279,19 @@ namespace six_point_two_eight {
 
 ## PCLを使用して、床を除去する
 
-知識と作成済みコードが増えた結果、なんだか大抵の作業が機械的にできちゃってつまんない。少し新しいことやりたいな……。同意します。少し高度な点群処理をやってみましょう。床の除去です。
+知識と作成済みコードが増えたら、なんだか大抵の作業が機械的にできるようになっちゃってつまんない。少し新しいことをやりたいな……。というわけで、少し高度な点群処理をやってみましょう。床の除去です。
 
 ### 床を除去？
 
-今回のプログラムでは床を除去する意味はあまりないのですけれど、ロボット・アームを使う場合等では、床の除去はとても重要です。ロボット・アームでテーブルの上にあるモノを掴むとき、テーブル板を除去できれば、どこにどんなモノがあるのかを簡単に判定できるようになりますから。
+今回のプログラムでは床を除去する意味はあまりないのですけれど、ロボット・アームを使う場合等では、床の除去はとても重要です。ロボット・アームでテーブルの上にあるモノを掴むとき、もしテーブル板を除去できるならば、どこにどんなモノがあるのかを簡単に判定できるようになりますから。
 
-PCLは当然この機能を提供していて、チュートリアルの[Plane model segmentation](http://pointclouds.org/documentation/tutorials/planar_segmentation.php)で、平面を検出する方法を紹介しています。点群を分割する、セグメンテーションの機能で平面を検出しています。このセグメンテーション機能で、やってみましょう[^12]。
+PCLは当然この重要な機能を提供します。チュートリアルの[Plane model segmentation](http://pointclouds.org/documentation/tutorials/planar_segmentation.php)を見ると、平面を検出する方法が紹介されています。点群を形状でセグメンテーション分割する方法の解説ですね。このセグメンテーション機能で、床の除去をやってみましょう[^12]。
 
-[^12]: まぁ、床なら、平面の検出ではなくて、`z`軸の値で検出できますけどね……。
+[^12]: まぁ、床なら、平面の検出ではなくて、`z`軸の値で検出できるんですけどね……。
 
 ### セグメンテーション
 
-ただね、PCLが提供する機能はね、点群の中で一番大きな平面の検出だけなんですよ。平らな壁も、平面として識別されてしまいます。対象物に平面がある場合も危険です。幸いなことに平面を識別する機能では見つかった平面の式の係数（平面の方程式ax + by + cz + d = 0のaとb、c、d）を返してくれます。`a`と`b`が小さくて`c`が大きいなら水平面だと考えられますから、床と壁は区別できそう。`d`が小さければ位置が低いので、対象物の平面ではないと判断できそう。というわけで、ロジックが決まりました。
+ただ、PCLが提供する機能は、点群の中で一番大きな平面の検出だけなんですよ。平らな壁も、平面として識別されてしまいます。対象物に大きな平面がある場合も危険です。幸いなことに平面を識別する機能では見つかった平面の式の係数（平面の方程式ax + by + cz + d = 0の、aとb、c、d）を返してくれます。`a`と`b`が小さくて`c`が大きいなら水平面だと考えられますから、水平な床と垂直な壁は区別できそう。`d`が小さければ位置が低いでしょうから、対象物の平面ではないことも判断できそう。以上で、ロジックが決まりました。
 
 #### include/six\_point\_two\_eight/point\_cloud\_utilities.h
 
@@ -1317,9 +1317,9 @@ namespace six_point_two_eight {
 
 #### src/point\_cloud\_utilities.cpp
 
-床を削除するコードは、こんな感じ。床ではない平面が検出された場合は次の平面を探さなければなりませんので、再帰呼出ししています。平面の数はそれほど多くないでしょうから、再帰呼出しでもスタックが不足することはないでしょう。また、点を削除するときにインデックスが変わらないように、`setKeepOrganized()`に`true`を設定できるようにもしてあります。
+床を削除するコードは、こんな感じ。床ではない平面が検出された場合は次の平面を探さなければなりませんので、再帰呼出ししています。平面の数はそれほど多くないでしょうから、再帰呼出しでもスタックが不足して問題になることはないでしょう。また、点を削除するときにインデックスが変わってしまわないように、`setKeepOrganized()`に`true`を設定できるようにもしてあります。
 
-あと、ごめんなさい。以前のコードはグローバルな名前空間を汚していて嫌だっとので、今回、実装部分の関数を`point_cloud_utilities`名前空間で囲んでみました。
+あと、ごめんなさい。以前のコードはグローバルな名前空間を汚していて嫌だっとので、今回の修正で、実装部分の関数を`point_cloud_utilities`名前空間で囲んでみました。
 
 ```cpp
 #include <boost/foreach.hpp>
@@ -1359,7 +1359,7 @@ namespace point_cloud_utilities {  // グローバルな名前空間を汚さな
 
   // 点群の中の、床だと思われる点のインデックス群を取得します。
   pcl::PointIndices::Ptr getFloorPointIndices(PointCloud::ConstPtr point_cloud) {
-    // 再帰呼出しの終了条件その1。点群に点がなくなったら再帰呼び出しを終了します。
+    // 点群に点がなくなったらどうしようもないので、終了します。
     if (point_cloud->size() == 0) {
       return pcl::PointIndices::Ptr();
     }
@@ -1369,7 +1369,7 @@ namespace point_cloud_utilities {  // グローバルな名前空間を汚さな
     segmentation.setOptimizeCoefficients(true);
     segmentation.setModelType(pcl::SACMODEL_PLANE);
     segmentation.setMethodType(pcl::SAC_RANSAC);
-    segmentation.setDistanceThreshold(0.025);
+    segmentation.setDistanceThreshold(0.025);  // 平面の誤差。
     segmentation.setInputCloud(point_cloud);
 
     // 平面を検出します。
@@ -1377,7 +1377,7 @@ namespace point_cloud_utilities {  // グローバルな名前空間を汚さな
     pcl::PointIndices::Ptr floor_point_indices(new pcl::PointIndices());
     segmentation.segment(*floor_point_indices, *floor_model_coefficients);
 
-    // 平面を検出できなかった場合の処理。
+    // これ以上平面を検出できない場合はどうしようもないので、終了します。
     if (floor_point_indices->indices.size() == 0) {
       ROS_WARN_STREAM("Can't find plane...");
       return pcl::PointIndices::Ptr();
@@ -1403,7 +1403,7 @@ namespace point_cloud_utilities {  // グローバルな名前空間を汚さな
       return getFloorPointIndices(removeIndicesFromPointCloud(point_cloud, floor_point_indices, true));
     }
 
-    // 床と思われる平面を返す。再帰呼出しは完了します。
+    // 床と思われる平面を返します。
     return floor_point_indices;
   }
 
@@ -1526,4 +1526,4 @@ namespace six_point_two_eight {
 
 ![make_target_models](images/make_target_models_1.png)
 
-このようにガタガタの点群になってしまった理由は、タイヤがスリップしたりセンサーがモーターの回転数を数え間違えたりして、オドメトリーに誤差が出るためです。ビジネス・アプリケーションでRDBMSでトランザクションな世界に慣れているととてもびっくりするんですけど、センサーからのデータを信用しては駄目なんです。だから、どうにかして誤差を抑えこまなければなりません。でも、ねぇ、どうやって？
+このようにガタガタの点群になってしまった理由は、タイヤがスリップしたりセンサーがモーターの回転数を数え間違えたりして、オドメトリーに誤差が出るためです。ビジネス・アプリケーションでRDBMSでトランザクションな世界に慣れているととてもびっくりするんですけど、センサーからのデータを疑わずにプログラムを作成しては駄目なんです。だから、どうにかして誤差を抑えこまなければなりません。でも、ねぇ、どうやって？

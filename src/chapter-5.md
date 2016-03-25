@@ -1,6 +1,6 @@
 # 3D点群を統合する
 
-誤差を抑えこむために高度な数学を駆使する技巧の限りを尽くしたプログラムを作成する……のは大変そうですから、PCLにどうにかしてもらいましょう。PCLのドキュメントを見ると、Registrationのチュートリアルの[Interactive Iterative Closest Point](http://pointclouds.org/documentation/tutorials/interactive_icp.php)のやり方で出来そうです。このドキュメントの最後にある位置と角度がずれた点群を重ねあわせていくGIFアニメーションを見ると、うん、簡単にできそう。さっそく、やってみましょう。
+誤差を抑えこむために、高度な数学を駆使する技巧の限りを尽くしたプログラムを作成する……のは大変そうですから、PCLにどうにかしてもらいましょう。PCLのドキュメントを見ると、Registrationのチュートリアルの[Interactive Iterative Closest Point](http://pointclouds.org/documentation/tutorials/interactive_icp.php)のやり方で出来そうです。このドキュメントの最後にある位置と角度がずれた点群を重ねあわせていくGIFアニメーションを見ると、うん、簡単にできそう。さっそく、やってみましょう。
 
 ## Boost Range
 
@@ -58,7 +58,7 @@ namespace six_point_two_eight {
 }
 ```
 
-何か作業をするたびにコレクションに値を入れ直している点が、上のコードの致命的な欠陥だと考えます。何か処理をする際には、必ず変数宣言という前処理をしなければならないんですもんね。でも、そうしないと、次の関数の引数の`begin`と`end`を用意できなくなっちゃうし……。C++以外のほとんどの言語では、イテレーターが開始と終了をパックして管理するので`copy_if`の戻り値を`transform`の引数に回すことができるのになぁ。たとえばPythonなら、こんな感じで書けるのに……。
+何か作業をするたびにコレクションに値を入れ直している点が、上のコードの欠陥だと考えます。何か処理をする際には、必ず変数宣言という前処理をしなければならないんですもんね。でも、そうしないと、次の関数の引数の`begin`と`end`を用意できなくなっちゃうし……。C++以外のほとんどの言語では、イテレーターが開始と終了をパックして管理するので`copy_if`の戻り値を`transform`の引数に回すことができるのになぁ。たとえばPythonなら、こんな感じで書けるのに……。
 
 ```python
 x = map(lambda filename: "/tmp/" + filename, 
@@ -68,7 +68,7 @@ x = map(lambda filename: "/tmp/" + filename,
 
 ### Boost Rangeに乗り換えよう
 
-C++が`begin`と`end`方式を採用したのは、最も軽量な順次アクセス手段であるポインターをイテレーターとして扱えるようにするためです。その理屈は分かるけれども、高速なCPUで高度なコレクションを扱うときに面倒なコードを強制されるのは、勘弁して欲しい。
+C++が`begin`と`end`方式を採用したのは、最も軽量な順次アクセス手段であるポインターをイテレーターとして扱えるようにするため。その理屈は分かるけれども、高速なCPUで高度なコレクションを扱うときに面倒なコードを強制されるのは、勘弁して欲しい。
 
 と、このように思う人は多かったみたいで、BoostにはRangeというライブラリが含まれています。Rangeは、範囲を持つイテレーター。他の言語での、ごく普通のイテレーター相当ですな。このRangeを使うと、以下のコードのように簡潔に記述できます。名前空間があるので少しゴチャゴチャしているけど、それを除けばPython版とあまり変わりません。
 
@@ -94,11 +94,11 @@ auto xxx =
 
 ### データ・ファイルを読み込んで、ダミーの点群レジストレーション処理を呼び出して、保存する
 
-Boost Rangeを活用して、点群のレジストレーション以外の処理を作成してしまいましょう。
+Boost Rangeを活用して、点群のレジストレーション以外の処理を先に作成してしまいましょう。
 
 #### include/six\_point\_two\_eight/point\_cloud\_utilities.h
 
-作成する処理の中で少し難しいのは、360°回転した以降のデータを捨てるところでしょう。この処理を実現するには、360°回転したところの点群かどうかを判断しなければなりませんから。幸いなことにオドメトリーの誤差はそれほど大きくはありませんから、単純に2つの点群がどれだけ重なっているかで判断できそうです。そして、点群の大きさに差はありませんから、PCLのAPIを眺めていた時に見つけた`compute3DCentroid()`で重心を求めて、その距離を測るだけでよいでしょう。というわけで、`getCentroidOfPointCloud2()`関数を宣言しました。あと、データ・ファイルを削除するための`removePointcloud2File()`関数と、もちろん、`loadPointCloud2File()`も。
+作成する処理の中で少し難しいのは、360°回転した以降のデータを捨てるところでしょう。この処理を実現するには、360°回転したところの点群かどうかを判断しなければなりませんからね。幸いなことにオドメトリーの誤差はそれほど大きくないので、2つの点群がどれだけ重なっているかで判断できそうです。そして、各点群の大きさに差はありませんから、PCLのAPIを眺めていた時に見つけた`compute3DCentroid()`で重心を求めて、その距離を測るだけでよいでしょう。というわけで、`getCentroidOfPointCloud2()`関数を宣言しました。あと、データ・ファイルを削除するための`removePointcloud2File()`関数と、もちろん、`loadPointCloud2File()`も。
 
 点群を画面に表示する方法を学ぶために、PCLのチュートリアルの[PCLVisualizer](http://pointcloud.org/documentation/tutorials/pcl_visualizer.php)を見たところ、点群はIDで管理されて更新/削除されるらしい。あと、画面上の点群を区別するに色分けが必要ということで、`std::string id`と`int rgb`を引数に取る`showPointCloud2()`関数を宣言しました。また、どうやらPCLVisualizerは別スレッドを起動して独自に動いてくれるわけではなくて、画面を更新させるには`spinOnce()`メンバー関数の呼び出しが必要みたい。だから、`spinVisualizer()`関数も宣言します。
 
@@ -219,7 +219,7 @@ namespace point_cloud_utilities {
     pcl::visualization::PointCloudColorHandlerCustom<Point> point_cloud_color(point_cloud, (rgb >> 16) & 0x00ff, (rgb >> 8) & 0x00ff, rgb & 0x00ff);
     
     // 点群を表示します。
-    if (!visualizer_->updatePointCloud(point_cloud, point_cloud_color, id)) {  // 追加の場合は、
+    if (!visualizer_->updatePointCloud(point_cloud, point_cloud_color, id)) {  // 点群の追加（updatePointCloud()の戻り値が偽）の場合は、
       visualizer_->addPointCloud(point_cloud, point_cloud_color, id);          // 色と表示方法を設定します。
       visualizer_->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, id);
     }
@@ -278,13 +278,13 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::transformPointCloud2(sensor_msg
 
 #### include/six\_point\_two\_eight/register\_models.h
 
-メインの処理です。ちょっと複雑なので、コメントをいっぱい入れてみました。`onInit()`の前半ではBoost Rangeを使って快調にプログラミングできたのですけれど、二周目の点群のインデックスの取得や点群のレジストレーションではBoost Rangeでキレイに処理を書けませんでした……。なので、別関数に抜き出して隠しました。
+メインの処理です。ちょっと複雑なので、今回はコメントをいっぱい入れてみました。`onInit()`の前半ではBoost Rangeを使って快調にプログラミングできたのですけれど、二周目の点群のインデックスの取得や点群のレジストレーションでは、Boost Rangeでキレイに処理を書けませんでした……。なので、メンバー関数として抽出して隠しています。
 
-二周目の点群のインデックス取得処理（`getNextRoundStartingIndex()`）では、上で述べたように点群の重心間の距離で判断しています。一番距離が近い点群の「インデックス」を取得するのですけれど、インデックス化に必要なUbuntu 14.04のBoost 1.54の`boost::adaptors::indexed`は使いづらかった（1.60のだと使いやすそう）ので、`for`ループで実現しました。あと、1番目と2番目の点群の重心の距離は近いでしょうから、処理の対象は点群の集合の後ろ半分としています。
+二周目の点群のインデックス取得処理（`getNextRoundStartingIndex()`）では、上で述べたように点群の重心間の距離で判断しています。一番距離が近い点群の「インデックス」を取得するのですけれど、インデックス化に必要なUbuntu 14.04のBoost 1.54の`boost::adaptors::indexed`は使いづらかった（1.60になると使いやすそう）ので、`for`ループで実現しました。あと、1番目と2番目の点群の重心の距離は近いでしょうから、処理の対象は点群の集合の後ろ半分としています。
 
-点群の表示(`shorPointCloud2()`)では、点群のIDと色が毎回同じになるように、点群のタイムスタンプを使用しました。
+点群の表示(`shorPointCloud2()`)では、点群のIDと色が常に同じになるように、点群のタイムスタンプを使用しました。
 
-点群のレジストレーション処理（`registerPointCloud2s()`）では、最初の点群に2番目の点群をレジストレーションした結果に3番目の点群をレジストレーションした結果に4番目の……と繰り返して処理が続きます。これは、関数型言語での`reduce`とか`fold`と呼ばれる処理パターンですね。C++の場合は名前が変わって、`accumulate`になります。`accumulate`に渡すラムダ式の中では、どこまで処理が進んだかを我々にレポートさせるために`ROS_INFO_STREAM`でログ出力し、レジストレーションして表示してレジストレーション済み点群の集合に追加して、次のターンのためにレジストレーション済み点群の集合をリターンしています。
+点群のレジストレーション処理（`registerPointCloud2s()`）では、最初の点群に2番目の点群をレジストレーションした結果に3番目の点群をレジストレーションした結果に4番目の……と繰り返して処理が続きます。これは、関数型言語で`reduce`とか`fold`と呼ばれる処理パターンですね。C++の場合は名前が変わって、`accumulate`になります。`accumulate`に渡すラムダ式の中では、どこまで処理が進んだかを我々にレポートさせるために`ROS_INFO_STREAM`でログ出力して、レジストレーションして、表示して、レジストレーション済み点群の集合に追加して、次のターンのためにレジストレーション済み点群の集合をリターンしています。
 
 あと、`make_world_models`の結果の統合では二周目の点群を削除、`make_target_models`なら何もしないように分岐しなければなりません。これは、パラメーターで実現することにしましょう。`Nodelet`でパラメーターを取得するには、`getPrivateNodeHandle().getParam("パラメーター名", 変数)`とします。
 
@@ -317,7 +317,9 @@ namespace six_point_two_eight {
       auto path = directory_entry.path();
       auto file_prefix = std::string("six_point_two_eight_");
 
-      return path.filename().string().substr(0, file_prefix.size()) == file_prefix && path.extension().string() == ".pcd";
+      return 
+        path.filename().string().substr(0, file_prefix.size()) == file_prefix && 
+        path.extension().string() == ".pcd";
     }
 
     // 二周目の点群のインデックスを計算します。
@@ -336,7 +338,9 @@ namespace six_point_two_eight {
         auto centroid_2 = getCentroidOfPointCloud2(point_clouds[i]);
 
         // 重心間の距離を計算します。
-        auto distance = std::sqrt(std::pow(centroid_1.x - centroid_2.x, 2) + std::pow(centroid_1.y - centroid_2.y, 2));  // 上下には動かないので、zは無視します。
+        auto distance = 
+          std::sqrt(std::pow(centroid_1.x - centroid_2.x, 2) + std::pow(centroid_1.y - centroid_2.y, 2));  // 上下には動かないので、zは無視します。
+          
         // もし、重心間の距離がこれまでの点群よりも小さいなら、そこを一周目の終わり（仮）とします。
         if (distance < min_distance) {
           min_distance = distance;
@@ -354,7 +358,11 @@ namespace six_point_two_eight {
       std::stringstream id;
       id << point_cloud->header.stamp;
 
-      return six_point_two_eight::showPointCloud2(point_cloud, id.str(), colors[(point_cloud->header.stamp.toNSec() / 1000) & colors.size()]);
+      return 
+        six_point_two_eight::showPointCloud2(
+          point_cloud, 
+          id.str(), 
+          colors[(point_cloud->header.stamp.toNSec() / 1000) & colors.size()]);
     }
 
     // 点群の集合を表示します。
@@ -412,7 +420,7 @@ namespace six_point_two_eight {
             six_point_two_eight_file_paths | boost::adaptors::transformed(loadPointCloud2File),
             std::back_inserter(point_clouds));
           
-          // make_world_modelsのデータの場合に備えて、データを一周分に制限します。
+          // make_world_modelsのデータの場合は、データを一周分に制限します。
           if (cut_next_round_) {
             auto next_round_starting_index = getNextRoundStartingIndex(point_clouds);
 
@@ -427,7 +435,7 @@ namespace six_point_two_eight {
               point_clouds | boost::adaptors::sliced(next_round_starting_index, boost::distance(point_clouds)),
               removePointCloud2File);
 
-            // 一周目のデータを、レジストレーションの対象に設定。
+            // 一周目のデータのみを、レジストレーションの対象に設定。
             point_clouds = this_round_point_clouds;
           }
 
@@ -479,7 +487,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::RegisterModels, nodelet::Nodelet)  /
 
 #### six\_point\_two\_eight.xml
 
-いつものように、`Nodelet`に名前を付けてください。本稿で`six_point_two_eight.xml`を編集するのはこれで最後、単純作業はもうありませんのでご安心を。
+いつものように、`Nodelet`に名前を付けてください。本稿で`six_point_two_eight.xml`を編集するのもこれで最後、単純作業はもうありませんのでご安心を。
 
 ```xml
 <library path="lib/libsix_point_two_eight">
@@ -541,7 +549,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::RegisterModels, nodelet::Nodelet)  /
 
 ### CUIは便利
 
-最初に断っておきますが、ここから先では、けっこう試行錯誤します。`make_world_models`でデータ作成→`register_world_models`でデータ統合をやる方式だと、実施する回数が多いのでかなり大変でしょう。`make_world_models`や`make_target_models`の結果を、適当なディレクトリに退避しておいてください。以下のような感じ。
+最初に断っておきますけど、ここから先は迷走して大量の試行錯誤をします。`make_world_models`でデータ作成→`register_world_models`でデータ統合をやる方式だと、実施する回数が多いのでかなり大変でしょう。だから、`make_world_models`や`make_target_models`の結果を適当なディレクトリに退避しておいてください。以下のような感じ。
 
 ```bash
 $ rm -f /tmp/six_point_two_eight_*.pcd && roslaunch six_point_two_eight make_world_models.launch
@@ -658,11 +666,11 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 
 ![チュートリアルのコードのコピペでレジストレーション](images/register_models_2.png)
 
-`register_world_models`なんて、プログラムで処理する前の方がまともだったりします。どうしましょ？
+`register_world_models`なんか、処理する前の方がまともな有り様。どうしましょ？
 
 ### 残りのチュートリアルを読んでみる
 
-とりあえず、残りのチュートリアルも読んでみましょう。
+とりあえず、残りのチュートリアルを読んでみましょう。
 
 #### How to incrementally register pair of clouds
 
@@ -670,7 +678,7 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 
 #### Interactive Iterative Closest Point
 
-先ほど作成した失敗コードと同じやり方。でも、ドキュメント上では、ピッタリとレジストレーションできています。でも、このGIFアニメの点群って、移動と回転をさせた同じ点群なのでは？　我々が今苦労している、異なる点群のレジストレーションとは条件が違うのかと……。
+先ほど作成した失敗コードと同じやり方。でも、ドキュメント上では、ピッタリとレジストレーションできています。でも、このGIFアニメの点群って、少し移動と回転をさせた同じ点群なのでは？　我々が今苦労している、異なる点群のレジストレーションとは条件が違いそう……。
 
 #### How to use Normal Distribution Transform
 
@@ -678,7 +686,7 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 
 #### 試してみる
 
-ここまでで、適当にコードを真似して試してみました。結果は、かなり良くはなるけれど、それでもまだ誤差が大きくて駄目。`register_world_models`では、一周しても最初の場所に戻りません。`register_target_models`では、途中であらぬ方行にずれてしまいます。実行にやたらと時間がかかるし。
+ここまでで、適当にコードを真似して試してみました。結果は、良くはなるけれど、それでもまだ誤差が大きくて駄目。`register_world_models`では、一周しても最初の場所に戻りません。`register_target_models`では、途中であらぬ方向にずれていきます。
 
 ……アルゴリズムとパラメーターについて真面目に調べないと駄目みたいですね。
 
@@ -688,7 +696,7 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 
 #### pcl::IterativeClosestPointのリファレンス
 
-[pcl::IterativeClosestPointのリファレンス](http://docs.pointclouds.org/trunk/classpcl_1_1_iterative_closest_point.html)を読んでみると、Iterative Closest Pointアルゴリズムの基本実装だって書いてあります。ということは、応用があるってことかなぁと。継承関係の図を見ると、`pcl::IterativeClosestPointNonLinear`と`pcl::IterativeClosestPointWithNormals`と`pcl::JointIterativeClosestPoint`の3つの派生クラスが見つかりました。
+[pcl::IterativeClosestPointのリファレンス](http://docs.pointclouds.org/trunk/classpcl_1_1_iterative_closest_point.html)を読んでみると、Iterative Closest Pointアルゴリズムの基本実装だって書いてあります。応用があるってことかなぁ。継承関係の図を見ると、`pcl::IterativeClosestPointNonLinear`と`pcl::IterativeClosestPointWithNormals`と`pcl::JointIterativeClosestPoint`の3つの派生クラスが見つかりました。
 
 あと、3つの終了条件があると書いてあります。
 
@@ -696,13 +704,13 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 2. 一回前の座標変換と今回の座標変換の間の差（`setTransformationEpsilon()`で設定）
 3. ユークリッド座標系での差の合計（`setEuclideanFitnessEpsilon()`で設定）
 
-でも、メンバー関数のドキュメントを見ても詳細は載っておらず、単位が何なのかすら分かりません……。1はともかくとして、2と3は何をどんなふうに指定するんでしょうか？　単位が推測できる1の繰り返しの回数も、1万と10万で実行時間が変わらないんだけど、一体どういうこと？
+でも、メンバー関数のドキュメントを見ても詳細は載っておらず、単位が何なのかすら分かりません……。1はともかくとして、2と3は何をどんなふうに指定するんでしょうか？　単位が推測できる1の繰り返しの回数も、1万と10万にしてみたけど実行時間は変わりません。一体どういうこと？
 
 リファレンス中にサンプル・コードもありました。その中で`setMaxCorrespondenceDistance()`で何か設定していて、設定した値よりも離れた点の対応は無視されると書いてあるけど、無視するってのはどういう意味なのでしょうか？
 
 #### pcl::IterativeClosestPointNonLinearのリファレンス
 
-Levenberg-Marquard法を取り入れたと書いてあります。それ以外は`pcl::IterativeClosestPoint`と同じ。Levenberg-Marquard法ってのを少し調べてみると、局所解に陥るのをうまいこと防ぎながら、それでいて速く答えを探してくれるアルゴリズムみたい。試してみると、`pcl::IterativeClosestPoint`では中途半端にしかレジスターしない場合にも、`pcl::IterativeClosestPointNonlinear`だとさらに探索してくれました。遅いですけどね。
+Levenberg-Marquard法を取り入れたと書いてあります。それ以外は`pcl::IterativeClosestPoint`と同じ。Levenberg-Marquard法ってのを少し調べてみると、局所解に陥るのをうまいこと防ぎながら、それでいて速く答えを探してくれるアルゴリズムみたい。試してみると、`pcl::IterativeClosestPoint`では中途半端にしかレジスターしない場合にも、`pcl::IterativeClosestPointNonlinear`だとさらに探索してくれました。遅いですけどね。もう、統合に時間がかかるのは諦めることにしました。
 
 #### pcl::IterativeClosestPointWithNomalのリファレンス
 
@@ -710,23 +718,23 @@ Levenberg-Marquard法を取り入れたと書いてあります。それ以外�
 
 #### pcl::JointIterativeClosestPointのリファレンス
 
-同じ座標変換を共有する複数のフレーム向け（multiple frames which sare the same transform）って書いてあるけど、意味がわかりません……。続いて"This is particularly useful when solving for camera extrinsics using multiple observations"って書いてあるけど、どんな場合に有効なのかすら分かりません……。
+同じ座標変換を共有する複数のフレーム向け（multiple frames which share the same transform）って書いてあるけど、意味がわかりません……。続いて"This is particularly useful when solving for camera extrinsics using multiple observations"って書いてあるけど、私にはどんな場合に有効なのか分かりません……。
 
 #### pcl::NormalDistributionsTransformのリファレンス
 
-論文を読むように書いてありました……。でも論文はダウンロード出来ませんでした。あとでもう一度試すことにしよう。
+論文を読むように書いてありました……。でも論文はダウンロード出来ませんでした。将来、暇でどうしようもないときにもう一度試すことにしましょう。
 
 #### 試してみる
 
-`pcl::IterativeClosestPoint`と`pcl::IterativeClosestPointNonLinear`を試してみました。`pcl::IterativeClosestPointNonLinear`の方が、大きな間違いをしないようです。今回は`pcl::InteractiveClosestPointNonLinear`を使うことにしましょう。
+`pcl::IterativeClosestPoint`と`pcl::IterativeClosestPointNonLinear`を試してみました。`pcl::IterativeClosestPointNonLinear`の方が、大きな間違いをしないようです。というわけで、今回は`pcl::InteractiveClosestPointNonLinear`を採用。
 
-パラメーターもいろいろな値を試してみました。`setMaxCorrespondenceDistance()`を0.05のような小さな値にすると精度が高まるのですけど、「Not enough correspondences found. Relax your threshold parameters」と表示されてエラーになってしまう場合もありました。`setMaximumIterations()`と`setTransformationEpsilon()`と`setEuclideanFitnessEpsilon()`については、動作が変わる場合と変わらない場合があって、なんだか分かりません。
+パラメーターもいろいろな値を試してみました。`setMaxCorrespondenceDistance()`を0.05のような小さな値にすると精度が高まるのですけど、「Not enough correspondences found. Relax your threshold parameters」と表示されてエラーになってしまう場合もありました。`setMaximumIterations()`と`setTransformationEpsilon()`と`setEuclideanFitnessEpsilon()`については、動作が変わる場合と変わらない場合があって、もうなんだか分かりません。
 
-……結局、ドキュメントの品質が低いことだけが分かりました。具体的なコードがどこかにないかなぁ。
+……ドキュメントの品質が低いことだけが分かりました。具体的なコードがどこかにないかなぁ。
 
 ### テスト・コードを読んでみる
 
-PCLはオープン・ソースなので、ソース・コードのダウンロードが可能です。`git clone http://github.com/PointCloudLibrary/pcl.git`して、テストのコードを見てみましょう。
+PCLはオープン・ソースなので、ソース・コードのダウンロードが可能です。適当なディレクトリで`git clone http://github.com/PointCloudLibrary/pcl.git`して、テスト・コードを読んでみましょう。
 
 #### test_fpcs_ia.cpp、test_kfpcs_ia.cpp
 
@@ -734,9 +742,9 @@ PCLはオープン・ソースなので、ソース・コードのダウンロ�
 
 #### test_registration.cpp
 
-コードを読んだら、`pcl::JointIterativeClosestPoint`クラスの用途が分かりました。ソースとターゲットの両方に複数の点群を設定し、ソース群からターゲット群への座標変換を計算するためのクラスみたいです。やっぱりコードがあると、いろいろ明確になるなぁ。今回の処理には無関係でしたけど。
+コードを読んだら、`pcl::JointIterativeClosestPoint`クラスの用途が分かりました。ソースとターゲットの両方に複数の点群を設定し、ソース群からターゲット群への座標変換を計算するためのクラスみたいです。やっぱりコードがあると、いろいろ明確になるなぁ。今回の処理には無関係ですけど。
 
-あと、`pcl::registration::CorresondenceRejector`クラスのサブ・クラスを使うと、対応する点だとみなさない条件を付加できることも分かりました。ただ、ドキュメントで`CorresondenceRejector`のサブ・クラスを調べた限りでは、今回の処理に役立ちそうなのは見つかりませんでした。残念。
+あと、`pcl::registration::CorresondenceRejector`クラスのサブ・クラスを使うと、対応する点だとみなさない条件を付加できることも分かりました。ただ、ドキュメントで`CorresondenceRejector`のサブ・クラスを調べた限りでは、今回の処理に役立ちそうなのは見つかりませんでした。残念だけどないものはしょうがない。
 
 `setMaxCorrespondenceDistance()`の使い方も、分かりました。対応する点とみなす距離のしきい値なんですね。値を小さくすると遠くの点に引っ張られておかしなレジストレーションをする危険性が減って精度が上がって、でも値が小さすぎると対応する点が見つからないのでレジストレーション出来なくてエラーになるというわけ。
 
@@ -748,7 +756,7 @@ PCLはオープン・ソースなので、ソース・コードのダウンロ�
 
 ### ログを出力してみる
 
-PCLはエラーの場合しかログを出力してくれない、ROSのドキュメントに従ってログ・レベルを変更してもログが増えないと思っていたのですけど、PCLのログ・レベルはROSとは別に設定しなければならないことが分かりました。
+PCLはエラーの場合しかログを出力してくれない、ROSのドキュメントに従ってログ・レベルを変更してもログが増えないなと思っていたら、PCLのログ・レベルはROSとは別に設定しなければならないことが分かりました。
 
 #### src/point\_cloud\_utilities.cpp
 
@@ -761,7 +769,7 @@ PointCloud::Ptr registerPointCloud(PointCloud::ConstPtr source_point_cloud, Poin
   icp.setInputSource(source_point_cloud);
   icp.setInputTarget(target_point_cloud);
 
-  // 遠くの点に引きづられないように、近くの点同士を対応付けるようにします。
+  // 遠くの点に引きづられないように、近くの点同士で対応付けるようにします。
   icp.setMaxCorrespondenceDistance(0.1);
     
   // デバッグのために、ログ・レベルを設定します。
@@ -825,11 +833,11 @@ Transformation is:
 	0.000000	0.000000	0.000000	1.000000
 ```
 
-`Iteration`が10回で終わってしまっています。ログ中の`Current transformation`は、繰り返しあたりの座標変換だと思われます。`Previous / Current MSE for correspondences distances`というのは、一つ前と今回の繰り返しでのレジストレーション後のズレでしょう。このログから、10回目でもまだ座標変換をしていて、ズレが減るどころか増えていることが分かります。`setMaxIterationCounts()`が必要でしょう。
+`Iteration`が10回で終わってしまっています。ログ中の`Current transformation`は、繰り返しあたりの座標変換でしょう。`Previous / Current MSE for correspondences distances`というのは、一つ前と今回の繰り返しでのレジストレーション後のズレでしょう。このログから、10回目でもまだ座標変換をしていて、ズレが減るどころか増えていることが分かります。`setMaxIterationCounts()`が必要でしょう。
 
 #### setMaxIterationCounts()
 
-コードに、`setMaxIterationCounts()`を追加しました。繰り返し回数は、少し多めに500回としています。
+コードに、`setMaxIterationCounts()`を追加しました。繰り返し回数は、少し多めに500回にします。
 
 ```cpp
 PointCloud::Ptr registerPointCloud(PointCloud::ConstPtr source_point_cloud, PointCloud::ConstPtr target_point_cloud) {
@@ -902,7 +910,7 @@ Transformation is:
 	0.000000	0.000000	0.000000	1.000000
 ```
 
-ちょっと時間はかかりますけど、その分、`Iteration`の回数が増えて、精度が高くなっています。私のデータ（`make_world_models`）の場合、1つ目の点群で35、2つ目の点群で31、以後、27、32、32、57、45、45、42、54……となりました。`Iteration`はこの程度の値で収束するので、だから、リファレンスを読んだ時に試した、1万とか10万とかの設定は無意味だったんですね。
+時間はかかりますけど、`Iteration`の回数が増え、精度が高くなっています。私のデータ（`make_world_models`）の場合、繰り返し回数は1つ目の点群で35、2つ目の点群で31、以後、27、32、32、57、45、45、42、54……となりました。`Iteration`はこの程度の値で収束するので、だから、リファレンスを読んだ時に試した、1万とか10万とかの設定は無意味だったんですね。
 
 さて、このコードでの結果を見ると、まだまだズレが大きすぎます。
 
@@ -963,13 +971,13 @@ PointCloud::Ptr registerPointCloud(PointCloud::ConstPtr source_point_cloud, Poin
 
 というわけで、`setTransformationEpsilon()`する値は、1.0e-8に決定しましょう。
 
-さて、この先はどうしましょうか？　`setEuclideanFitnessEpsilon()`の値はログの`Previous / Current MSE for correspondences distances`だと思うのですけど、この値は点群ごとにバラバラなので、しきい値を決めるのは無理のようです。精度向上のために打てる手がなくなってしまいました……。
+さて、この先はどうしましょうか？　`setEuclideanFitnessEpsilon()`の値はログの`Previous / Current MSE for correspondences distances`だと思うのですけど、この値は点群ごとにバラバラなので、しきい値を決めるのは無理のようです。もう、精度向上のために打てる手がありません……。
 
 ## 誤差を分散させる
 
-深度センサーとして使用しているASUS Xtion PRO LIVEのデータに誤差があるのか、PCLのレジストレーションの誤差があるのかは分かりませんが、精度を向上させることで問題を解消するのは難しいのではないでしょうか？　そもそも、もしどこまでも精度を向上させられるなら、レジストレーションの前にオドメトリーの精度を向上させればよいわけですしね。
+深度センサーとして使用しているASUS Xtion PRO LIVEのデータに誤差があるのか、PCLのレジストレーションの誤差があるのかは分かりませんけど、精度を向上させることで問題を解消するのは難しいのではないでしょうか？　そもそも、もしどこまでも精度を向上させられるなら、レジストレーションなんかやらないでオドメトリーの精度を向上させればよいわけですしね。
 
-というわけで、誤差の存在を認めて、その誤差を分散させる方法について考えてみましょう。
+というわけで、誤差の存在を認めて、その誤差を分散させる方法を考えてみましょう。
 
 ### 四元数は、補間が可能
 
@@ -984,11 +992,11 @@ Transformation is:
 	0.000000	0.000000	0.000000	1.000000
 ```
 
-この行列は、`getFinalTransformation()`メンバー関数で取得できます。戻り値の型は`Eigen::Matrix4f`で、少し工夫すれば座標変換を表現するROSの`geometry_msgs/Transform`に変換できます。`geometry_msgs/Transform`は、その内部に`geometry_msgs/Vector3 translation`と`geometry_msgs/Quaternion rotation`を持ちます。Quaternionというのは、TFのところで少しだけ触れた四元数ですな。実は、この四元数って、別の四元数との間の補間が可能という素晴らしい特徴を持っています。
+この行列は、`getFinalTransformation()`メンバー関数で取得できます。戻り値の型は`Eigen::Matrix4f`で、少し工夫すれば座標変換を表現するROSの`geometry_msgs/Transform`に変換できます。`geometry_msgs/Transform`は、その内部に`geometry_msgs/Vector3 translation`と`geometry_msgs/Quaternion rotation`を持ちます。Quaternionというのは、TFのところで少しだけ触れた四元数ですな。この四元数は、別の四元数との間の補間が可能という素晴らしい特徴を持っています。
 
-3Dグラフィックスでは、四元数を任意の軸を中心にどれだけ回転したかと解釈します。4元数の最初の3つ、xとyとzが回転軸を表現し、残り1つのwが回転量を表現するわけ。で、この4つの数は、4次元の球の表面の座標を表していると考えることもできるらしい（どうしてそうなるのかは、私以外の人に聞いてください……）。そして、球の表面上の点から別の点への経路は、3次元の場合は地球上を飛行機で旅するのと同じに計算できます。これは、四次元の球でもかわらないみたい。で、経路なのだから、A地点からB地点への経路を3/4進んだところとかも計算できます。つまり、2つの四元数の間の補間が可能なわけ。
+3Dグラフィックスでは、四元数を任意の軸を中心にどれだけ回転したかと解釈します。4元数の最初の3つ、xとyとzが回転軸を表現し、残り1つのwが回転量を表現するわけ。で、この4つの数は、4次元の球の表面の座標を表していると考えることもできるらしい（どうしてそうなるのかは、私以外の人に聞いてください）。そして、球の表面上の点から別の点への経路は、3次元の場合は地球上を飛行機で旅するのと同じに計算できます。これは、四次元の球でもかわらないみたい。で、経路なのだから、A地点からB地点への経路を3/4進んだところとかも計算できます。つまり、2つの四元数の間の補間が可能なわけ。
 
-補間ができるという特徴を今回の処理に当てはめると、最後の点群と最初の点群をレジストレーションした際の`rotation`を点群の数で刻んでそれぞれの点群に適用すれば、回転に関する誤差を分散できることになります。もう一方の`translation`はごく普通のベクトルですから、単純計算で補間できるでしょう。回転と移動を別々に補完して組み合わせても大丈夫かはちょっと疑問が残りますが、まぁ、やってみれば分かるでしょう。
+補間ができるという特徴を今回の処理活用してみましょう。最後の点群と最初の点群をレジストレーションした際の`rotation`を、四元数の補間を使って、点群の数で分割します。この`rotation`を点群に適用すれば、回転に関する誤差を分散できます。もう一方の`translation`はごく普通のベクトルですから、単純計算で補間できるでしょう。回転と移動を別々に補完して組み合わせても大丈夫かはちょっと疑問が残りますけど、まぁ、やってみれば分かるでしょう。
 
 ### 誤差を均等に分散する
 
@@ -996,11 +1004,9 @@ Transformation is:
 
 #### include/six\_point\_two\_eight/point\_cloud\_utilities.h
 
-`registerPointCloud2()`関数の戻り値を、`geometry_msgs::Transform`に変更します。そうしないと、解消すべき誤差（座標変換）を取得できませんからね。`setMaxCorrespondenceDistance()`に設定する値を小さくしながらレジストレーションできるようにするために、`max_correspondence_distance`という引数も追加しておきます。
+`registerPointCloud2()`関数の戻り値を、`geometry_msgs::Transform`に変更します。そうしないと、解消の対象の誤差（座標変換）を取得できませんからね。あと、`setMaxCorrespondenceDistance()`に設定する値を小さくしながらレジストレーションできるようにするために、`max_correspondence_distance`という引数も追加しておきます。
 
-上の変更で`registerPointCloud2()`は点群の座標変換をしないことにりましたから、`geometry_msgs::Transform`を引数似とる`transformPointCloud2()`関数も追加しておきます。これなら、`transformPointCloud2(point_cloud, registerPointCloud2(point_cloud, ...))`と書くことでこれまでと同じ処理も実施できます。座標変換を余計に1回実施するのでパフォーマンスが落ちてしまうでしょうが、レジストレーションが遅いので、この程度の差は無視できるでしょう。
-
-`registerPointCloud2()
+上の変更で`registerPointCloud2()`は点群の座標変換をしないことにりましたから、`geometry_msgs::Transform`を引数にとるバージョンの`transformPointCloud2()`関数も追加しておきます。これなら、`transformPointCloud2(point_cloud, registerPointCloud2(point_cloud, ...))`でこれまでと同じ処理も実施できます。座標変換を余計に1回実施する分だけパフォーマンスが落ちますけど、レジストレーションが遅いので無視できるでしょう。
 
 ```cpp
 #ifndef SIX_POINT_TWO_EIGHT_POINT_CLOUD_UTILITIES_H
@@ -1034,7 +1040,7 @@ namespace six_point_two_eight {
 
 `transformPointCloud()`関数は、`pcl::transformPointCloud()`関数を呼び出すだけです。`registerPointCloud()`関数の戻り値の変更は、`return`の後を`icp.getFinalTransformation()`に変更するだけです。
 
-今回大変だったのは、`geometry_msgs::Transform`と`Eigen::Matrix4f`の変換という一見簡単そうな処理（`fromROSMsg`関数と`toROSMsg`関数）でした……。この2つの型を変換する関数は存在せず、TFの型を挟まなければ変換できなかったためです[^13]。
+今回大変だったのは、`geometry_msgs::Transform`と`Eigen::Matrix4f`の変換という一番簡単そうな処理（`fromROSMsg`関数と`toROSMsg`関数）でした……。この2つの型を変換する関数は存在しなくて、TFの型を挟まなければ変換できなかったためです[^13]。
 
 `transformPointCloud2()`関数と`registerPointCloud2()`関数は、ただのインターフェースです。これまでと同じ形で作成しました。
 
@@ -1146,8 +1152,14 @@ geometry_msgs::Transform six_point_two_eight::registerPointCloud2(
 // 略。
 
 // 点群を座標変換します。変換の内容は引数で指示します。
-sensor_msgs::PointCloud2Ptr six_point_two_eight::transformPointCloud2(sensor_msgs::PointCloud2ConstPtr points, const geometry_msgs::Transform& transform) {
-  return point_cloud_utilities::toROSMsg(point_cloud_utilities::transformPointCloud(point_cloud_utilities::fromROSMsg(points), point_cloud_utilities::fromROSMsg(transform)));
+sensor_msgs::PointCloud2Ptr six_point_two_eight::transformPointCloud2(
+  sensor_msgs::PointCloud2ConstPtr points, const geometry_msgs::Transform& transform) 
+{
+  return 
+    point_cloud_utilities::toROSMsg(
+      point_cloud_utilities::transformPointCloud(
+        point_cloud_utilities::fromROSMsg(points),
+        point_cloud_utilities::fromROSMsg(transform)));
 }
 
 // 略。
@@ -1157,11 +1169,11 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::transformPointCloud2(sensor_msg
 
 #### include/six_point_two_eight/register_models.h
 
-呼び出し側です。誤差の分散とレジストレーションの制御構造は同じ（どちらも`boost::accumulate`で実現できる）なので、共通部分を`processPointCloud2s()`メンバー関数として抽出しました。引数の`std::function`で、誤差の分散やレジストレーション特有の処理を渡します。
+呼び出し側です。誤差の分散とレジストレーションの制御構造は同じ（どちらも`boost::accumulate`で実現できる）なので、共通部分を`processPointCloud2s()`メンバー関数として抽出しました。引数の`std::function`で、誤差の分散やレジストレーション固有の処理を渡します。
 
-誤差の分散を実施する`adjustPointCloud2s()`メンバー関数では、四元数やベクトルを補完して誤差を分散させています。ROSのメッセージにはデータの格納以外の機能はなくて、補間の計算式をすべてプログラミングするのは大変なので、TFの型に変換してTF任せで計算をしています。最後の点群と最初の点群のレジストレーションで解消しなければならない誤差（座標変換）の量を計算して、それを`processPointCloud2s()`に渡す引数のラムダ式の中で補間しています。補間の基準点としては、最初の点群に対する座標変換は不要なので、`getIdentity()`で取得できる何も変換しない値を使用しています。
+誤差の分散を実施する`adjustPointCloud2s()`メンバー関数では、四元数やベクトルを補完して誤差を分散させています。ROSのメッセージにはデータの格納以外の機能はなく、補間の計算式をすべて自力でプログラミングするのは大変だったので、TFの型に変換してTF任せで計算をしています。具体的な処理としては、最後の点群と最初の点群のレジストレーションで解消しなければならない誤差（座標変換）の量を計算し、それを`processPointCloud2s()`に渡す引数のラムダ式の中で補間しています。四元数を補間する基準点は、最初の点群に対する座標変換は不要ですから、`getIdentity()`で取得できる何も変換しない四元数を使用しています。
 
-誤差の分散とレジストレーションの両方を実施するために、`registerAndAdjustPointCloud2s()`メンバー関数も追加しました。`max_correspondence_distance`の値を大→小と変更しながら、誤差の変換とレジストレーションを交互に呼び出す形で実装しています。繰り返し回数と`max_correspondence_distance`の値は、何回かプログラムを実行して結果を見ながら調整しました。
+誤差の分散とレジストレーションの両方を実施する、`registerAndAdjustPointCloud2s()`メンバー関数も追加しました。`max_correspondence_distance`の値を大→小と変更しながら、誤差の変換とレジストレーションを交互に呼び出す形で実装しています。繰り返し回数と`max_correspondence_distance`の値は、何回かプログラムを実行して結果を見ながら調整しました。
 
 ```cpp
 #pragma once
@@ -1247,14 +1259,14 @@ namespace six_point_two_eight {
 
     // 誤差の分散とレジストレーションを実施します。
     auto registerAndAdjustPointCloud2s(const std::vector<sensor_msgs::PointCloud2ConstPtr>& point_clouds) const {
-      // max_correspondence_distanceの値を小さく変化させながら、繰り返して誤差の分散とレジストレーションを実施します。
+      // max_correspondence_distanceの値を大→小へと変化させながら、誤差の分散とレジストレーションを実施します。
     
       return
-        adjustPointCloud2s(          // 5. レジストレーションの誤差を補正。
+        adjustPointCloud2s(          // 5. レジストレーションの誤差を分散。
           registerPointCloud2s(      // 4. 細かくレジストレーション。
-            adjustPointCloud2s(      // 3. レジストレーションの誤差を補正。
+            adjustPointCloud2s(      // 3. レジストレーションの誤差を分散。
               registerPointCloud2s(  // 2. 粗くレジストレーション
-                adjustPointCloud2s(  // 1. オドメトリーの誤差を補正。
+                adjustPointCloud2s(  // 1. オドメトリーの誤差を分散。
                   point_clouds,
                   0.1),
                 0.1),
@@ -1293,11 +1305,11 @@ namespace six_point_two_eight {
 
 #### include/six\_point\_two\_eight/utilities.h
 
-プログラムを実行する前に、回転について考えてみます。回転は、原点を中心に実施する処理ですよね。先ほど作成した誤差の分散では回転を補間しながら適用していますけど、原点から遠く離れた位置にある点群でも正しく動くのかどうか分かりません……。念の為、点群が原点の回りに集まるようにしておきましょう。
+プログラムを実行する前に、少し回転について考えてみましょう。回転は、原点を中心に実施する処理ですよね。先ほど作成した誤差の分散では回転を補間しながら適用していますけど、原点から遠く離れた位置にある点群でも正しく動くのかどうか分かりません……。データ採取時に、点群が原点の回りに集まるようにしておきましょう。
 
-点群の座標変換は`point_cloud_utilities.h`の`transformPointCloud2()`関数として宣言済みです。あとは、引数の`geometry_msgs/Transform`メッセージを生成する関数を作成するだけで、点群を原点の回りに移動させられます。作成しましょう。
+点群の座標変換は`point_cloud_utilities.h`の`transformPointCloud2()`関数として宣言済みです。あとは、引数の`geometry_msgs/Transform`メッセージを生成する関数の作成だけで、点群を原点の回りに移動させられます。作成しましょう。
 
-あと、一つ前の`register_models.h`の`adjustPointCloud2s()`関数でさりげなく使っていた（のにコードを載せなかった）`transformMsgToTF()`と`transformTFToMsg()`も、追加しました。
+あと、一つ前の`register_models.h`の`adjustPointCloud2s()`関数でさりげなく使っていた（のにコードを載せなかった）`transformMsgToTF()`と`transformTFToMsg()`は、こんな感じです。
 
 ```cpp
 ragma once
@@ -1458,18 +1470,18 @@ namespace six_point_two_eight {
 }
 ```
 
-#### 試してみる
+#### 完成！！！
 
-おお、うまくいきました！　これでプログラム作成は完了です。本当にお疲れさまでした。
+おお、うまくいきました！　これでプログラムは完成です！
 
 ![誤差を分散してレジストレーション](images/register_models_8.png)
 
 ![誤差を分散してレジストレーション](images/register_models_9.png)
 
-前にも載せましたけど、pcl_viewerで色付きで見るとこんな感じ。グリグリ動かすと私のお腹がぽっこりしているのが分かったりして、結構面白いです。
+前にも載せましたけど、`pcl_viewer`で色付きで見るとこんな感じ。グリグリ動かすと私のお腹がぽっこりしているのが分かったりして、結構面白いです。
 
 ![周囲360°の3D点群](images/world_model.png)
 
 ![対象物の周囲360°からの3D点群](images/target_model.png)
 
-最終版のソースコードと私の環境でのデータは、[http://github.com/tail-island/six_point_two_eight](http://github.com/tail-island/six_point_two_eight)にありまあす。お時間があるときにでも、ご覧になってください。
+最終版のソースコードと私の環境でのデータを、[http://github.com/tail-island/six_point_two_eight](http://github.com/tail-island/six_point_two_eight)に置きました。お時間があるときにでも、ご覧になってください。
