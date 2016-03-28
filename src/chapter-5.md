@@ -58,7 +58,7 @@ namespace six_point_two_eight {
 }
 ```
 
-何か作業をするたびにコレクションに値を入れ直している点が、上のコードの欠陥だと考えます。何か処理をする際には、必ず変数宣言という前処理をしなければならないんですもんね。でも、そうしないと、次の関数の引数の`begin`と`end`を用意できなくなっちゃうし……。C++以外のほとんどの言語では、イテレーターが開始と終了をパックして管理するので`copy_if`の戻り値を`transform`の引数に回すことができるのになぁ。たとえばPythonなら、こんな感じで書けるのに……。
+何か作業をするたびにコレクションに値を入れ直している点が、上のコードの致命的な欠陥だと考えます。何か処理をする際には、必ず変数宣言という前処理をしなければならないんですもんね。でも、そうしないと、次の関数の引数の`begin`と`end`を用意できなくなっちゃうし……。C++以外のほとんどの言語では、イテレーターが開始と終了をパックして管理するので`copy_if`の戻り値を`transform`の引数に回すことができるのになぁ。たとえばPythonなら、こんな感じで書けるのに……。
 
 ```python
 x = map(lambda filename: "/tmp/" + filename, 
@@ -70,7 +70,7 @@ x = map(lambda filename: "/tmp/" + filename,
 
 C++が`begin`と`end`方式を採用したのは、最も軽量な順次アクセス手段であるポインターをイテレーターとして扱えるようにするため。その理屈は分かるけれども、高速なCPUで高度なコレクションを扱うときに面倒なコードを強制されるのは、勘弁して欲しい。
 
-と、このように思う人は多かったみたいで、BoostにはRangeというライブラリが含まれています。Rangeは、範囲を持つイテレーター。他の言語での、ごく普通のイテレーター相当ですな。このRangeを使うと、以下のコードのように簡潔に記述できます。名前空間があるので少しゴチャゴチャしているけど、それを除けばPython版とあまり変わりません。
+このように思う人は多かったみたいで、BoostにはRangeというライブラリが含まれています。Rangeは、範囲を持つイテレーター。他の言語での、ごく普通のイテレーター相当ですな。このRangeを使うと、以下のコードのように簡潔に記述できます。名前空間があるので少しゴチャゴチャしているけど、それを除けばPython版とあまり変わりません。
 
 ```cpp
 auto x =
@@ -549,7 +549,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::RegisterModels, nodelet::Nodelet)  /
 
 ### CUIは便利
 
-最初に断っておきますけど、ここから先は迷走して大量の試行錯誤をします。`make_world_models`でデータ作成→`register_world_models`でデータ統合をやる方式だと、実施する回数が多いのでかなり大変でしょう。だから、`make_world_models`や`make_target_models`の結果を適当なディレクトリに退避しておいてください。以下のような感じ。
+最初に断っておきますけど、ここから先で迷走して、大量の試行錯誤をします。`make_world_models`でデータ作成→`register_world_models`でデータ統合をやる方式だと、実施する回数が多いのでかなり大変でしょう。だから、`make_world_models`や`make_target_models`の結果を適当なディレクトリに退避しておいてください。以下のような感じ。
 
 ```bash
 $ rm -f /tmp/six_point_two_eight_*.pcd && roslaunch six_point_two_eight make_world_models.launch
@@ -704,13 +704,13 @@ sensor_msgs::PointCloud2Ptr six_point_two_eight::registerPointCloud2(
 2. 一回前の座標変換と今回の座標変換の間の差（`setTransformationEpsilon()`で設定）
 3. ユークリッド座標系での差の合計（`setEuclideanFitnessEpsilon()`で設定）
 
-でも、メンバー関数のドキュメントを見ても詳細は載っておらず、単位が何なのかすら分かりません……。1はともかくとして、2と3は何をどんなふうに指定するんでしょうか？　単位が推測できる1の繰り返しの回数も、1万と10万にしてみたけど実行時間は変わりません。一体どういうこと？
+でも、メンバー関数のドキュメントを見ても詳細は載っておらず、単位が何なのかすら分かりません……。1はともかくとして、2と3は何をどんなふうに指定するんでしょうか？　唯一単位が推測できる繰り返しの回数を、1万と10万にしてみたけど実行時間は変わりません。一体どういうこと？
 
 リファレンス中にサンプル・コードもありました。その中で`setMaxCorrespondenceDistance()`で何か設定していて、設定した値よりも離れた点の対応は無視されると書いてあるけど、無視するってのはどういう意味なのでしょうか？
 
 #### pcl::IterativeClosestPointNonLinearのリファレンス
 
-Levenberg-Marquard法を取り入れたと書いてあります。それ以外は`pcl::IterativeClosestPoint`と同じ。Levenberg-Marquard法ってのを少し調べてみると、局所解に陥るのをうまいこと防ぎながら、それでいて速く答えを探してくれるアルゴリズムみたい。試してみると、`pcl::IterativeClosestPoint`では中途半端にしかレジスターしない場合にも、`pcl::IterativeClosestPointNonlinear`だとさらに探索してくれました。遅いですけどね。もう、統合に時間がかかるのは諦めることにしました。
+Levenberg-Marquard法を取り入れたと書いてあります。それ以外は`pcl::IterativeClosestPoint`と同じ。Levenberg-Marquard法ってのを少し調べてみると、局所解に陥るのをうまいこと防ぎながら、それなりに速く答えを探してくれるアルゴリズムみたい。試してみると、`pcl::IterativeClosestPoint`では中途半端にしかレジストレーションしない場合にも、`pcl::IterativeClosestPointNonlinear`だとさらに探索してくれました。遅いですけどね。このあたりで、統合に時間がかかるのは諦めることにしました。
 
 #### pcl::IterativeClosestPointWithNomalのリファレンス
 
@@ -728,7 +728,7 @@ Levenberg-Marquard法を取り入れたと書いてあります。それ以外�
 
 `pcl::IterativeClosestPoint`と`pcl::IterativeClosestPointNonLinear`を試してみました。`pcl::IterativeClosestPointNonLinear`の方が、大きな間違いをしないようです。というわけで、今回は`pcl::InteractiveClosestPointNonLinear`を採用。
 
-パラメーターもいろいろな値を試してみました。`setMaxCorrespondenceDistance()`を0.05のような小さな値にすると精度が高まるのですけど、「Not enough correspondences found. Relax your threshold parameters」と表示されてエラーになってしまう場合もありました。`setMaximumIterations()`と`setTransformationEpsilon()`と`setEuclideanFitnessEpsilon()`については、動作が変わる場合と変わらない場合があって、もうなんだか分かりません。
+パラメーターもいろいろな値を試してみました。`setMaxCorrespondenceDistance()`を0.05のような小さな値にすると精度が高まるのですけど、「Not enough correspondences found. Relax your threshold parameters」と表示されてエラーになってしまう場合もありました。`setMaximumIterations()`と`setTransformationEpsilon()`と`setEuclideanFitnessEpsilon()`については、結果が変わる場合と変わらない場合があって、もうなんだか分かりません。
 
 ……ドキュメントの品質が低いことだけが分かりました。具体的なコードがどこかにないかなぁ。
 
@@ -746,7 +746,7 @@ PCLはオープン・ソースなので、ソース・コードのダウンロ�
 
 あと、`pcl::registration::CorresondenceRejector`クラスのサブ・クラスを使うと、対応する点だとみなさない条件を付加できることも分かりました。ただ、ドキュメントで`CorresondenceRejector`のサブ・クラスを調べた限りでは、今回の処理に役立ちそうなのは見つかりませんでした。残念だけどないものはしょうがない。
 
-`setMaxCorrespondenceDistance()`の使い方も、分かりました。対応する点とみなす距離のしきい値なんですね。値を小さくすると遠くの点に引っ張られておかしなレジストレーションをする危険性が減って精度が上がって、でも値が小さすぎると対応する点が見つからないのでレジストレーション出来なくてエラーになるというわけ。
+`setMaxCorrespondenceDistance()`の使い方も、分かりました。対応する点とみなす距離のしきい値なんですね。値を小さくすると遠くの点に引っ張られた不正なレジストレーションをする危険性が減って精度が上がり、でも値が小さすぎると対応する点が見つからないのでレジストレーション出来なくてエラーになるというわけ。
 
 #### 試してみる
 
@@ -996,7 +996,7 @@ Transformation is:
 
 3Dグラフィックスでは、四元数を任意の軸を中心にどれだけ回転したかと解釈します。4元数の最初の3つ、xとyとzが回転軸を表現し、残り1つのwが回転量を表現するわけ。で、この4つの数は、4次元の球の表面の座標を表していると考えることもできるらしい（どうしてそうなるのかは、私以外の人に聞いてください）。そして、球の表面上の点から別の点への経路は、3次元の場合は地球上を飛行機で旅するのと同じに計算できます。これは、四次元の球でもかわらないみたい。で、経路なのだから、A地点からB地点への経路を3/4進んだところとかも計算できます。つまり、2つの四元数の間の補間が可能なわけ。
 
-補間ができるという特徴を今回の処理活用してみましょう。最後の点群と最初の点群をレジストレーションした際の`rotation`を、四元数の補間を使って、点群の数で分割します。この`rotation`を点群に適用すれば、回転に関する誤差を分散できます。もう一方の`translation`はごく普通のベクトルですから、単純計算で補間できるでしょう。回転と移動を別々に補完して組み合わせても大丈夫かはちょっと疑問が残りますけど、まぁ、やってみれば分かるでしょう。
+補間ができるという特徴を今回の処理活用してみましょう。最後の点群と最初の点群をレジストレーションした際の`rotation`を、四元数の補間を使って、点群の数で分割します。この`rotation`を点群に適用すれば、回転に関する誤差を分散できます。もう一方の`translation`はごく普通のベクトルですから、線形補間できるでしょう。
 
 ### 誤差を均等に分散する
 
@@ -1038,7 +1038,7 @@ namespace six_point_two_eight {
 
 #### src/point\_cloud\_utilities.cpp
 
-`transformPointCloud()`関数は、`pcl::transformPointCloud()`関数を呼び出すだけです。`registerPointCloud()`関数の戻り値の変更は、`return`の後を`icp.getFinalTransformation()`に変更するだけです。
+`transformPointCloud()`関数は、`pcl::transformPointCloud()`関数を呼び出すだけです。`registerPointCloud()`関数の戻り値の変更は、`return`の後を`icp.getFinalTransformation()`に変更したところ。
 
 今回大変だったのは、`geometry_msgs::Transform`と`Eigen::Matrix4f`の変換という一番簡単そうな処理（`fromROSMsg`関数と`toROSMsg`関数）でした……。この2つの型を変換する関数は存在しなくて、TFの型を挟まなければ変換できなかったためです[^13]。
 
@@ -1305,11 +1305,11 @@ namespace six_point_two_eight {
 
 #### include/six\_point\_two\_eight/utilities.h
 
-プログラムを実行する前に、少し回転について考えてみましょう。回転は、原点を中心に実施する処理ですよね。先ほど作成した誤差の分散では回転を補間しながら適用していますけど、原点から遠く離れた位置にある点群でも正しく動くのかどうか分かりません……。データ採取時に、点群が原点の回りに集まるようにしておきましょう。
+プログラムを実行する前に、少し回転について考えてみましょう。回転は、原点を中心に実施する処理ですよね。先ほど作成した誤差の分散では回転を補間しながら適用していますけど、原点から遠く離れた位置にある点群でも正しく動くのかどうか分かりません……。年のため、データ採取時に点群が原点の回りに集まるようにしておきましょう。
 
 点群の座標変換は`point_cloud_utilities.h`の`transformPointCloud2()`関数として宣言済みです。あとは、引数の`geometry_msgs/Transform`メッセージを生成する関数の作成だけで、点群を原点の回りに移動させられます。作成しましょう。
 
-あと、一つ前の`register_models.h`の`adjustPointCloud2s()`関数でさりげなく使っていた（のにコードを載せなかった）`transformMsgToTF()`と`transformTFToMsg()`は、こんな感じです。
+あと、一つ前の`register_models.h`の`adjustPointCloud2s()`関数でさりげなく使っていた（のにコードを載せ忘れた）`transformMsgToTF()`と`transformTFToMsg()`は、こんな感じです。
 
 ```cpp
 ragma once

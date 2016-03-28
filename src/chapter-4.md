@@ -66,7 +66,7 @@ namespace six_point_two_eight {
 
 移動プログラムでは、`/odom`トピックの値に合わせた、適切な`geometry_msgs/Twist`メッセージを作成していけばよいはず。目的地までの距離が遠かったり角度のズレが大きい場合は少し速く動いたり回転したりして、近くなったらゆっくりにする。目的地と`/odom`が一致したら移動終了。ただし、一致と言ってもピッタリにはできないだろうから、少し誤差を認めよう。目的地は、三角関数で計算できるはずだな。
 
-と、この程度を考えたところで、プログラムを組んでみました。プログラムを組んだ結果を先に述べておくと、プログラムが複雑になってしまうので、別のやり方を考えないと駄目な感じです。
+と、この程度を考えたところで、プログラムを組んでみました。結果を先に述べておくと、プログラムが複雑になってしまうので、もっと工夫しないと駄目な感じです。
 
 #### include/six\_point\_two\_eight/utilities.h
 
@@ -264,7 +264,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 ### 地図作成と自律移動のパッケージを動かして、ROSの可能性を感じてみる
 
-申し訳ないのですけれど`actionlib`はとりあえず脇に置いて、一時的に本稿から離れて[Build a map with SLAM](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Build%20a%20map%20with%20SLAM)と[Autonomously navigate in a known map](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Aotonomously%20navigate%20in%20a%20known%20map)を開き、指示に従ってみてください（もっと細かい情報が必要なら、[Learn TurtleBot and ROS](http://learn.turtlebot.com/)も参照してください）。
+`actionlib`はとりあえず脇に置いて、一時的に本稿から離れて[Build a map with SLAM](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Build%20a%20map%20with%20SLAM)と[Autonomously navigate in a known map](http://wiki.ros.org/turtlebot_navigation/Tutorials/indigo/Aotonomously%20navigate%20in%20a%20known%20map)を開き、指示に従ってみてください（もっと細かい情報が必要なら、[Learn TurtleBot and ROS](http://learn.turtlebot.com/)も参照してください）。
 
 これらのページの指示に従ってコマンドを入力していくと、TurtleBotに地図を作成させ、作成した地図を活用して自律走行させることができます。しかも、必要な作業はパッケージの起動だけ。プログラミングは無しです。
 
@@ -285,7 +285,7 @@ PLUGINLIB_EXPORT_CLASS(six_point_two_eight::PointCloud2Throttle, nodelet::Nodele
 
 ### actionlib::SimpleActionClient
 
-先ほどのTurtleBotの自律移動のチュートリアルでは移動先をRVizのGUIで指定していましたけれど、一味違う我々は、プログラムから指定してみましょう。`turtlebot_navigation`パッケージが使用している`navigation`パッケージのドキュメントの[Sending Goals to the Navigation Stack](http://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals)に、移動先をプログラムから指定する方法が書いてありました。このドキュメントの途中には`actionlib`を使うと書いてありますから、`navigation`に指示を出すプログラムを組むことは`actionlib`の調査につながります。
+先ほどのTurtleBotの自律移動のチュートリアルでは移動先をRVizのGUIで指定していましたけれど、一味違う我々は、プログラムから指定してみましょう。`turtlebot_navigation`パッケージが使用している`navigation`パッケージのドキュメントの[Sending Goals to the Navigation Stack](http://wiki.ros.org/navigation/Tutorials/SendingSimpleGoals)に、移動先をプログラムから指定する方法が書いてありました。このドキュメントの途中には`actionlib`を使うと書いてありますから、`navigation`に指示を出すプログラムを組むことは`actionlib`の調査につながるはず。
 
 とってもお得な話ですから、さっそく試してみましょう。
 
@@ -377,7 +377,7 @@ namespace six_point_two_eight {
 
 #### include/six\_point\_two\_eight/make\_target\_models.h
 
-`MoveBaseAction`を呼び出す形で、`six_point_two_eight::MakeTargetModels`クラスを全面的に書きなおしました。`actionlib`なし版と比較できるようにお題は同じで、9時の方向に0.5m進みます。
+`MoveBaseAction`を呼び出す形で、`six_point_two_eight::MakeTargetModels`クラスを全面的に書きなおしました。`actionlib`なし版と比較できるようにお題は同じ、9時の方向に0.5m進みます。
 
 ```cpp
 #pragma once
@@ -580,7 +580,7 @@ namespace six_point_two_eight {
 
 ### actionlib::SimpleActionServer
 
-でも、対象物の周囲360°からの点群作成のための道具としては、`navigation`パッケージはちょっとオーバースペックかも。`acitonlib`の勉強がてら、同じ処理（ただし、地図を参照して最短経路を探したり障害物を避けたりしない。指定された座標にただ進むだけの低機能版）をする`Nodelet`を作ってみましょう。
+でも、対象物の周囲360°からの点群作成のための道具としては、`navigation`パッケージはちょっとオーバースペックな気がします。`acitonlib`の勉強がてら、同じ処理（ただし、地図を参照して最短経路を探したり障害物を避けたりしない。指定された座標にただ進むだけの低機能版）をする`Nodelet`を作ってみましょう。
 
 #### include/six\_point\_two\_eight/move\_base\_server.h
 
@@ -641,9 +641,9 @@ public:
 
 ただ、このコードだと、ちょっと不格好ですね……。処理が分散していて、保守性が低そうです。
 
-でも、このコードはよいヒントになります。このコードで使われているBoostのIn-Place Factoryなら、初期化を遅らせることが可能です（このコードを見るまで、私はIn-Place Factoryの存在を知りませんでした）。だったら、わざわざ間にクラスを挟まなくてもよいはず。というわけで、以下のように、In-Place Factoryを使ってコードを書きました。
+でも、このコードはよいヒントになります。このコードで使われているBoostのIn-Place Factoryなら、初期化を遅らせることが可能です。だったら、わざわざ間にクラスを挟まなくてもよいはず。というわけで、以下のように、In-Place Factoryを使ってコードを書きました。
 
-移動処理のほとんどは、以前作成した`actionlib`を使わないバージョンからのコピー＆ペーストです。回転する処理と、`/odom`以外のフレームが指定された時に備えるために`TF`で座標変換する処理を付け加えた程度です。
+移動処理のほとんどは、以前作成した`actionlib`を使わないバージョンからのコピー＆ペーストです。回転する処理と、`/odom`以外のフレームが指定された時に備えるためにTFで座標変換する処理を付け加えた程度です。
 
 ```cpp
 #pragma once
@@ -1229,7 +1229,7 @@ namespace six_point_two_eight {
 }
 ```
 
-途中が少しごちゃごちゃしているのは、`point_cloud_utilities.h`の関数は`sensor_msgs::PointCloud2ConstPtr`を引数にとる形で定義しているのに`six_point_two_eight::GetPointCloud2Result`から受け取れるデータは`sensor_msgs::PointCloud2`（`ConstPtr`がつかない）なためです。だから、型変換しなければなりませんでした。あと、点群に含まれる点の数が少ないため、今回はダウンサンプリングはしませんでした。`point_cloud_utilities.h`の関数を呼び出した時に例外が発生した場合に点群を再採取できるように、`while`ループで囲んでいます。
+途中が少しごちゃごちゃしているのは、`point_cloud_utilities.h`の関数は`sensor_msgs::PointCloud2ConstPtr`を引数にとる形で定義しているのに`six_point_two_eight::GetPointCloud2Result`から受け取れるデータは`sensor_msgs::PointCloud2`（`ConstPtr`がつかない）なためです。だから、型変換しなければなりませんでした。点群に含まれる点の数が少ないため、今回はダウンサンプリングはしていません。あと、`point_cloud_utilities.h`の関数を呼び出した時に例外が発生した場合に点群を再採取できるように、`while`ループで囲んでいます。
 
 ### launch/make_target_models.launch
 
