@@ -8,7 +8,7 @@ ROS and C++14 sample. Getting 360 degree PointCloud.
 
 ## How to use
 
-* Build
+### Build
 
 ```bash
 $ cd <catkin_ws>/src
@@ -17,7 +17,7 @@ $ cd <catkin_ws>
 $ catkin_make
 ```
 
-* Execute
+### Execute
 
 ```bash
 $ roslaunch six_point_two_eight turtlebot_driver.launch
