@@ -2,9 +2,9 @@
 
 ROS and C++14 sample. Getting 360 degree PointCloud.
 
-[360 degree world](https://tail-island.github.io/six_point_two_eight/src/images/world_model.png)
+![360 degree world](https://tail-island.github.io/six_point_two_eight/src/images/world_model.png)
 
-[360 degree target](https://tail-island.github.io/six_point_two_eight/src/images/target_model.png)
+![360 degree target](https://tail-island.github.io/six_point_two_eight/src/images/target_model.png)
 
 ## How to use
 
