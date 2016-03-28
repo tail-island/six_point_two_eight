@@ -1,6 +1,6 @@
 # six_point_two_eight
 
-ROS and C++14 sample. Getting 360 degree PointCloud.
+ROS and C++14 sample. Getting 360 degree PointCloud with TurtleBot.
 
 ![360 degree world](https://tail-island.github.io/six_point_two_eight/src/images/world_model.png)
 
@@ -11,6 +11,8 @@ ROS and C++14 sample. Getting 360 degree PointCloud.
 ### Build
 
 ```bash
+# Please setup g++-4.9. Beacuse code uses C++14.
+
 $ cd <catkin_ws>/src
 $ git clone https://github.com/tail-island/six_point_two_eight.git
 $ cd <catkin_ws>
