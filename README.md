@@ -29,10 +29,10 @@ And
 
 ```bash
 $ roslaunch six_point_two_eight make_world_models.launch
-PCL files will be created on /tmp. When finished, press Ctrl-c.
+# PCL files will be created on /tmp. When finished, press Ctrl-c.
 
 $ roslaunch six_point_two_eight register_world_models.launch
-Sorry, it needs long time...
+# Sorry, it needs long time...
 
 $ pcl_viewer /tmp/*.pcd
 ```
@@ -41,7 +41,7 @@ Or
 
 ```bash
 $ roslaunch six_point_two_eight make_target_models.launch
-When finished, press Ctrl-c.
+# When finished, press Ctrl-c.
 
 $ roslaunch six_point_two_eight register_target_models.launch
 $ pcl_viewer /tmp/*.pcd
