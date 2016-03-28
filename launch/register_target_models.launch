@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find six_point_two_eight)/launch/register_models.launch">
+    <arg name="cut_next_round" value="false"/>
+  </include>
+</launch>

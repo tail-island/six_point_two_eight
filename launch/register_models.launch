@@ -1,0 +1,8 @@
+<launch>
+  <arg name="cut_next_round"/>
+  
+  <node pkg="nodelet" type="nodelet" name="six_point_two_eight_nodelet_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="register_models" args="load six_point_two_eight/register_models six_point_two_eight_nodelet_manager" output="screen">
+    <param name="cut_next_round" value="$(arg cut_next_round)"/>
+  </node>
+</launch>

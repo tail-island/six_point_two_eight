@@ -1,0 +1,20 @@
+<launch>
+  <arg name="get_point_cloud_2" default="get_point_cloud_2"/>
+  <arg name="move_base" default="move_base"/>
+  <arg name="odom" default="odom"/>
+  <arg name="points" default="camera/depth_registered/points"/>
+  <arg name="velocity" default="mobile_base/commands/velocity"/>
+  
+  <node pkg="nodelet" type="nodelet" name="six_point_two_eight_nodelet_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="make_target_models" args="load six_point_two_eight/make_target_models six_point_two_eight_nodelet_manager" output="screen">
+    <remap from="get_point_cloud_2" to="$(arg get_point_cloud_2)"/>
+    <remap from="move_base" to="$(arg move_base)"/>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="get_point_cloud_2_server" args="load six_point_two_eight/get_point_cloud_2_server six_point_two_eight_nodelet_manager" output="screen">
+    <remap from="points" to="$(arg points)"/>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="move_base_server" args="load six_point_two_eight/move_base_server six_point_two_eight_nodelet_manager" output="screen">
+    <remap from="odom" to="$(arg odom)"/>
+    <remap from="velocity" to="$(arg velocity)"/>
+  </node>
+</launch>

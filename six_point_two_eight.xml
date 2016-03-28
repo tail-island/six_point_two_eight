@@ -1,0 +1,8 @@
+<library path="lib/libsix_point_two_eight">
+  <class name="six_point_two_eight/get_point_cloud_2_server" type="six_point_two_eight::GetPointCloud2Server" base_class_type="nodelet::Nodelet"/>
+  <class name="six_point_two_eight/make_target_models" type="six_point_two_eight::MakeTargetModels" base_class_type="nodelet::Nodelet"/>
+  <class name="six_point_two_eight/make_world_models" type="six_point_two_eight::MakeWorldModels" base_class_type="nodelet::Nodelet"/>
+  <class name="six_point_two_eight/move_base_server" type="six_point_two_eight::MoveBaseServer" base_class_type="nodelet::Nodelet"/>
+  <class name="six_point_two_eight/point_cloud_2_throttle" type="six_point_two_eight::PointCloud2Throttle" base_class_type="nodelet::Nodelet"/>
+  <class name="six_point_two_eight/register_models" type="six_point_two_eight::RegisterModels" base_class_type="nodelet::Nodelet"/>
+</library>

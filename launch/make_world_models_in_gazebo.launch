@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find six_point_two_eight)/launch/make_world_models.launch">
+    <arg name="points" value="camera/depth/points"/>
+  </include>
+</launch>

@@ -1,0 +1,17 @@
+<launch>
+  <arg name="odom" default="odom"/>
+  <arg name="points" default="camera/depth_registered/points"/>
+  <arg name="velocity" default="mobile_base/commands/velocity"/>
+  
+  <node pkg="nodelet" type="nodelet" name="six_point_two_eight_nodelet_manager" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="make_world_models" args="load six_point_two_eight/make_world_models six_point_two_eight_nodelet_manager" output="screen">
+    <remap from="odom" to="$(arg odom)"/>
+    <remap from="points" to="$(arg points)_throttled"/>
+    <remap from="velocity" to="$(arg velocity)"/>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="point_cloud_2_throttle" args="load six_point_two_eight/point_cloud_2_throttle six_point_two_eight_nodelet_manager" output="screen">
+    <remap from="topic_in" to="$(arg points)"/>
+    <remap from="topic_out" to="$(arg points)_throttled"/>
+    <param name="update_rate" value="0.5"/>
+  </node>
+</launch>
