@@ -1,4 +1,4 @@
-# six_point_two_eight
+# six\_point\_two\_eight
 
 ROS and C++14 sample. Getting 360 degree PointCloud with TurtleBot.
 
