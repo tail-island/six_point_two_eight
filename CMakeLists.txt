@@ -45,6 +45,10 @@ catkin_package(CATKIN_DEPENDS
 
 add_compile_options(
   "-std=c++14"
+  
+  # Ubuntu16.04のboost1.58のrange::adaptors::filteredはForwardConceptを要求して、filesystemsはSinglePassConceptです（1.59では、filteredがSinglePassConceptを要求する形に修正されている……）。
+  # とりあえず、コンセプト・チェックを外して対応とします。boostのバージョン上げたいなぁ……。
+  "-DBOOST_RANGE_ENABLE_CONCEPT_ASSERT=0"
 )
 
 # PCL1.7.2は、C++14に対応していません。コンパイル・オプションを指定して対応します。

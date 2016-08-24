@@ -88,7 +88,8 @@ namespace point_cloud_utilities {
   PointCloud::Ptr getSpherePointCloud(PointCloud::ConstPtr point_cloud, const Eigen::Vector3f& centroid, double radius) {
     SphereCondition<Point>::Ptr condition(new SphereCondition<Point>(centroid, radius));
   
-    pcl::ConditionalRemoval<Point> conditional_removal(condition);
+    pcl::ConditionalRemoval<Point> conditional_removal;
+    conditional_removal.setCondition(condition);
     conditional_removal.setInputCloud(point_cloud);
     
     PointCloud::Ptr sphere_point_cloud(new PointCloud());
