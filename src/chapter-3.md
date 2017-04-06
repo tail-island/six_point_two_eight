@@ -850,7 +850,7 @@ namespace six_point_two_eight {
 // 略
 ```
 
-#### src/point\_cloud\_utilities.h
+#### src/point\_cloud\_utilities.cpp
 
 フィルタリング条件は、`pcl::ConditionBase`を継承して作成するみたいです（ラムダ式なんて贅沢は言いません。せめてファンクターにして欲しかった……）。`getSpherePointCloud()`関数は、作成したクラスを使うだけです。
 
@@ -889,7 +889,7 @@ public:
 // pcl::ConditionalRemovalを使用して、球の内側の点のみを抽出します。
 PointCloud::Ptr getSpherePointCloud(PointCloud::ConstPtr point_cloud, const Eigen::Vector3f& center, double radius) {
   // コンディションを生成。
-  SphereCondition<Point>::Ptr(new SphereCondition<Point>(center, radius));
+  SphereCondition<Point>::Ptr condition(new SphereCondition<Point>(center, radius));
 
   // pcl::ConditionRemovalを生成。
   pcl::ConditionalRemoval<Point> conditional_removal(condition);
